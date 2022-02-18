@@ -12,6 +12,7 @@
 gRenderer* gRenderObject::renderer;
 
 bool gRenderObject::isrendermaterialsloaded = false;
+bool gRenderObject::isshadowmappingenabled = false;
 
 
 gRenderObject::gRenderObject() {
@@ -31,6 +32,22 @@ void gRenderObject::setScreenSize(int screenWidth, int screenHeight) {
 	renderer->setScreenSize(screenWidth, screenHeight);
 }
 
+void gRenderObject::setUnitScreenSize(int unitWidth, int unitHeight) {
+	renderer->setUnitScreenSize(unitWidth, unitHeight);
+}
+
+void gRenderObject::setScreenScaling(int screenScaling) {
+	renderer->setScreenScaling(screenScaling);
+}
+
+int gRenderObject::getScreenWidth() {
+	return renderer->getScreenWidth();
+}
+
+int gRenderObject::getScreenHeight() {
+	return renderer->getScreenHeight();
+}
+
 void gRenderObject::pushMatrix() {
 #if defined(WIN32) || defined(LINUX)
 	glPushMatrix();
@@ -43,4 +60,19 @@ void gRenderObject::popMatrix() {
 #endif
 }
 
+void gRenderObject::enableShadowMapping() {
+	isshadowmappingenabled = true;
+}
+
+void gRenderObject::disableShadowMapping() {
+	isshadowmappingenabled = false;
+}
+
+bool gRenderObject::isShadowMappingEnabled() {
+	return isshadowmappingenabled;
+}
+
+gRenderer* gRenderObject::getRenderer() {
+	return renderer;
+}
 

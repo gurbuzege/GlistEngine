@@ -20,12 +20,18 @@ public:
 	virtual void setup();
 	virtual void update();
 
-	void setAppManager(gAppManager *appManager);
+	void setAppManager(gAppManager* appManager);
 	gAppManager* getAppManager();
+
+	void setCurrentCanvas(gBaseCanvas* currentCanvas);
+	gBaseCanvas* getCurrentCanvas();
 
 	void setFramerate(int targetFramerate);
 	int getFramerate();
 	double getElapsedTime();
+
+	void enableVsync();
+	void disableVsync();
 
 protected:
 	gAppManager *appmanager;

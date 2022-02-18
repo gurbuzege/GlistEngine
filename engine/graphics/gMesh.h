@@ -24,12 +24,17 @@
 
 class gMesh : public gNode {
 public:
+	static const int DRAWMODE_POINTS = 0, DRAWMODE_LINES = 1, DRAWMODE_LINELOOP = 2, DRAWMODE_LINESTRIP = 3,
+	DRAWMODE_TRIANGLES = 4, DRAWMODE_TRIANGLESTRIP = 5, DRAWMODE_TRIANGLEFAN = 6,
+	DRAWMODE_QUADS = 7, DRAWMODE_QUADSTRIP = 8, DRAWMODE_POLYGON = 9;
+
 	gMesh();
 	gMesh(std::vector<gVertex> vertices, std::vector<unsigned int> indices, std::vector<gTexture> textures);
 	virtual ~gMesh();
 
 	void setVertices(std::vector<gVertex> vertices, std::vector<unsigned int> indices = std::vector<unsigned int>());
-	void setTextures(std::vector<gTexture>);
+	void setTextures(std::vector<gTexture>& textures);
+	void setTexture(gTexture* texture);
 	void addTexture(gTexture tex);
 	gTexture* getTexture(int textureNo);
 
@@ -40,10 +45,19 @@ public:
 	gBoundingBox getBoundingBox();
 	gVbo* getVbo();
 
+	void setName(std::string name);
+	std::string getName();
+
+	void setDrawMode(int drawMode);
+	int getDrawMode();
+
 	void setMaterial(gMaterial* material);
 	gMaterial* getMaterial();
 
 	void draw();
+
+    gBoundingBox getInitialBoundingBox();
+    bool intersectsTriangles(gRay* ray);
 
 protected:
     void drawStart();
@@ -51,10 +65,13 @@ protected:
     void drawEnd();
 	gVbo vbo;
 	std::vector<gVertex> vertices;
+    bool isprojection2d;
 
 private:
+    std::string name;
 	std::vector<unsigned int> indices;
 	std::vector<gTexture> textures;
+	int drawmode;
     gMaterial material;
     int sli;
     unsigned int ti;
@@ -66,8 +83,13 @@ private:
     gLight* scenelight;
     gShader* colorshader;
     gShader* textureshader;
+    gShader *pbrshader;
 
     float bbminx, bbminy, bbminz, bbmaxx, bbmaxy, bbmaxz;
+    glm::vec3 bbvpos;
+    int bbi;
+
+    gBoundingBox initialboundingbox;
 };
 
 #endif /* ENGINE_GRAPHICS_GMESH_H_ */

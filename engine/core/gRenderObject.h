@@ -20,12 +20,22 @@ public:
 	virtual ~gRenderObject();
 
 	static void setScreenSize(int screenWidth, int screenHeight);
+	static void setUnitScreenSize(int unitWidth, int unitHeight);
+	static void setScreenScaling(int screenScaling);
+	int getScreenWidth();
+	int getScreenHeight();
 
 	void pushMatrix();
 	void popMatrix();
 
+	static void enableShadowMapping();
+	static void disableShadowMapping();
+	static bool isShadowMappingEnabled();
+
+	static gRenderer* getRenderer();
 protected:
 	static gRenderer* renderer;
+	static bool isshadowmappingenabled;
 
 private:
 	static bool isrendermaterialsloaded;

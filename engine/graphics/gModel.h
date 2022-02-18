@@ -13,6 +13,7 @@
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
+#include <assimp/cimport.h>
 
 #include <string>
 #include <fstream>
@@ -21,12 +22,13 @@
 #include <map>
 #include "gSkinnedMesh.h"
 #include <vector>
+#include <deque>
 
 
 class gModel : public gNode {
 public:
     // model data
-    std::vector<gTexture> textures_loaded;	// stores all the textures loaded so far, optimization to make sure textures aren't loaded more than once.
+    std::deque<gTexture> textures_loaded;	// stores all the textures loaded so far, optimization to make sure textures aren't loaded more than once.
     std::vector<gSkinnedMesh>    meshes;
     std::string directory;
 
@@ -38,13 +40,19 @@ public:
 	void load(std::string fullPath);
 	void draw();
 
+	std::string getFilename();
+	std::string getFullpath();
 	int getMeshNum();
+	int getMeshNo(std::string meshName);
 	gSkinnedMesh getMesh(int meshNo);
+	gSkinnedMesh* getMeshPtr(int meshNo);
+	std::string getMeshName(int meshNo);
 	gBoundingBox getBoundingBox();
 
 	void move(float dx, float dy, float dz);
 	void move(const glm::vec3 dv);
-	void rotate(float angle, float ax, float ay, float az);
+	void rotate(float radians, float ax, float ay, float az); //first change
+	void rotateDeg(float degrees, float ax, float ay, float az);
 	void rotate(const glm::quat& q);
 	void scale(float sx, float sy, float sz);
 	void scale(float s);
@@ -52,10 +60,14 @@ public:
 	void truck(float distance);
 	void boom(float distance);
 	void tilt(float radians);
+	void tiltDeg(float degrees);
 	void pan(float radians);
+	void panDeg(float degrees);
 	void roll(float radians);
+	void rollDeg(float degrees);
 
 	void setPosition(float px, float py, float pz);
+	void setPosition(const glm::vec3& p);
 	void setOrientation(const glm::quat& o);
 	void setOrientation(const glm::vec3& angles);
 	void setScale(const glm::vec3& s);
@@ -81,18 +93,20 @@ public:
 	bool isVertexAnimationStoredOnVram();
 	void makeVertexAnimated(bool storeOnVram = true);
 
+    gBoundingBox getInitialBoundingBox();
 
 private:
 	const aiScene* scene;
 	void loadModelFile(std::string fullPath);
 	void processNode(aiNode *node, const aiScene *scene);
-	gSkinnedMesh processMesh(aiMesh *mesh, const aiScene *scene);
-	std::vector<gTexture> loadMaterialTextures(aiMaterial *mat, aiTextureType type, int textureType);
+	gSkinnedMesh processMesh(aiMesh *mesh, const aiScene *scene, aiMatrix4x4 matrix);
+	void loadMaterialTextures(gSkinnedMesh* mesh, aiMaterial *mat, aiTextureType type, int textureType);
 	void updateBones(gSkinnedMesh* gmesh, aiMesh* aimesh);
 	void updateVbo(gSkinnedMesh* gmesh);
 	void updateAnimationNodes();
 	void generateAnimationKeys();
 
+	std::string filename;
 	int animationnum;
 	bool isanimated;
 	float animationposition, animationpositionold;
@@ -106,6 +120,13 @@ private:
 	bool isvertexanimationstoredonvram;
 
     float bbminx, bbminy, bbminz, bbmaxx, bbmaxy, bbmaxz;
+    int bbi, bbj;
+    std::vector<gVertex> bbvertices;
+    glm::vec3 bbvpos;
+    gVertex bbv;
+
+    glm::mat4 convertMatrix(const aiMatrix4x4 &aiMat);
+    gBoundingBox initialboundingbox;
 };
 
 #endif /* ENGINE_GRAPHICS_GMODEL_H_ */

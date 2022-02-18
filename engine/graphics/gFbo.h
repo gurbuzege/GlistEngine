@@ -17,8 +17,12 @@ public:
 	gFbo();
 	virtual ~gFbo();
 
-	void allocate(int width, int height);
+	void allocate(int width, int height, bool isDepthMap = false);
     unsigned int getId();
+	int getWidth();
+	int getHeight();
+	unsigned int getTextureId();
+    gTexture& getTexture();
 
 	void bind();
 	void unbind();
@@ -34,11 +38,16 @@ public:
     void drawSub(glm::vec2 pos, glm::vec2 size, glm::vec2 subpos, glm::vec2 subsize, float rotate = 0.0f);
     void drawSub(const gRect& src, const gRect& dst, float rotate = 0.f);
 
+	static unsigned int getQuadVao();
 private:
     unsigned int framebuffer;
-    unsigned int textureColorbuffer;
-    gTexture colortexture;
+    gTexture texture;
+    int width, height;
+    bool isdepthmap;
+    unsigned int textureid;
 
+    static bool isvaoset;
+	static unsigned int quadVAO, quadVBO;
 };
 
 #endif /* GRAPHICS_GFBO_H_ */

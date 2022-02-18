@@ -43,23 +43,51 @@ int gGetCullFace();
 void gSetCullingDirection(int cullingDirection);
 int gGetCullingDirection();
 
+void gDrawLine(float x1, float y1, float x2, float y2);
+void gDrawLine(float x1, float y1, float z1, float x2, float y2, float z2);
+
+void gDrawCircle(float xCenter, float yCenter, float radius, bool isFilled = false, float numberOfSides = 64.0f);
+void gDrawArrow(float x1, float y1, float length, float angle, float tipLength, float tipAngle);
+void gDrawRectangle(float x, float y, float w, float h, bool isFilled = false);
+void gDrawRectangle(float x, float y, float w, float h, bool isFilled, float thickness, float borderposition = 0.0f);
+void gDrawBox(float x, float y, float z, float w = 1.0f, float h = 1.0f, float d = 1.0f, bool isFilled = true);
+void gDrawBox(glm::mat4 transformationMatrix, bool isFilled = true);
+void gDrawSphere(float xPos, float yPos, float zPos, int xSegmentNum = 64, int ySegmentNum = 64, float scale = 1.0f, bool isFilled = true);
 
 class gRenderer: public gObject {
 public:
+	static const int SCREENSCALING_NONE, SCREENSCALING_MIPMAP, SCREENSCALING_AUTO;
 	static const int DEPTHTESTTYPE_LESS, DEPTHTESTTYPE_ALWAYS;
 
 	gRenderer();
 	virtual ~gRenderer();
 
 	static void setScreenSize(int screenWidth, int screenHeight);
+	static void setUnitScreenSize(int unitWidth, int unitHeight);
+	static void setScreenScaling(int screenScaling);
 
 	int getWidth();
 	int getHeight();
 	int getScreenWidth();
 	int getScreenHeight();
+	int getUnitWidth();
+	int getUnitHeight();
+	static int getScreenScaling();
+
+	static void setCurrentResolution(int resolution);
+	static void setCurrentResolution(int screenWidth, int screenHeight);
+	static void setUnitResolution(int resolution);
+	static void setUnitResolution(int screenWidth, int screenHeight);
+	static int getResolution(int screenWidth, int screenHeight);
+	int getCurrentResolution();
+	int getUnitResolution();
+	static int scaleX(int x);
+	static int scaleY(int y);
 
 	void setColor(int r, int g, int b, int a = 255);
+	void setColor(float r, float g, float b, float a = 1.0f);
 	void setColor(gColor color);
+	void setColor(gColor* color);
 	gColor* getColor();
 
 	void clear();
@@ -78,6 +106,13 @@ public:
 	void setGlobalAmbientColor(gColor color);
 	gColor* getGlobalAmbientColor();
 
+	bool isFogEnabled();
+	void enableFog();
+	void disableFog();
+	void setFogColor(float r, float g, float b);
+	void setFogDensity(float d);
+	void setFogGradient(float g);
+
 	void addSceneLight(gLight* light);
 	gLight* getSceneLight(int lightNo);
 	int getSceneLightNum();
@@ -93,51 +128,79 @@ public:
 
 	void enableAlphaBlending();
 	void disableAlphaBlending();
+	bool isAlphaBlendingEnabled();
 	void enableAlphaTest();
 	void disableAlphaTest();
+	bool isAlphaTestEnabled();
 
 	gShader* getColorShader();
 	gShader* getTextureShader();
 	gShader* getFontShader();
 	gShader* getImageShader();
 	gShader* getSkyboxShader();
+	gShader* getShadowmapShader();
+	gShader* getPbrShader();
+	gShader* getEquirectangularShader();
+	gShader* getIrradianceShader();
+	gShader* getPrefilterShader();
+	gShader* getBrdfShader();
+	gShader* getFboShader();
 
 	void setProjectionMatrix(glm::mat4 projectionMatrix);
 	void setProjectionMatrix2d(glm::mat4 projectionMatrix2d);
 	void setViewMatrix(glm::mat4 viewMatrix);
+	void setCameraPosition(glm::vec3 cameraPosition);
 	glm::mat4 getProjectionMatrix();
 	glm::mat4 getProjectionMatrix2d();
 	glm::mat4 getViewMatrix();
+	glm::vec3 getCameraPosition();
 	void backupMatrices();
 	void restoreMatrices();
 
+	gColor* fogcolor;
+	float fogdensity;
+	float foggradient;
 
 private:
 	static int width, height;
-	gColor *rendercolor;
+	static int unitwidth, unitheight;
+	static int screenscaling;
+	static int currentresolution, unitresolution;
+	gColor* rendercolor;
 
-	gColor *lightingcolor;
+	gColor* lightingcolor;
 	bool islightingenabled;
+	bool isfogenabled;
 	glm::vec3 lightingposition;
-	gColor *globalambientcolor;
+	gColor* globalambientcolor;
 	int li;
 	std::vector<gLight*> scenelights;
+
 
 	bool isdepthtestenabled;
 	int depthtesttype;
 	unsigned int depthtesttypeid[2];
+	bool isalphablendingenabled, isalphatestenabled;
 
-	gShader *colorshader;
-	gShader *textureshader;
-	gShader *fontshader;
-	gShader *imageshader;
-	gShader *skyboxshader;
+	gShader* colorshader;
+	gShader* textureshader;
+	gShader* fontshader;
+	gShader* imageshader;
+	gShader* skyboxshader;
+	gShader* shadowmapshader;
+	gShader* pbrshader;
+	gShader* equirectangularshader;
+	gShader* irradianceshader;
+	gShader* prefiltershader;
+	gShader* brdfshader;
+	gShader* fboshader;
 
 	glm::mat4 projectionmatrix;
 	glm::mat4 projectionmatrixold;
 	glm::mat4 projectionmatrix2d;
 	glm::mat4 viewmatrix;
 	glm::mat4 viewmatrixold;
+	glm::vec3 cameraposition;
 
 	const std::string getShaderSrcColorVertex();
 	const std::string getShaderSrcColorFragment();
@@ -149,7 +212,18 @@ private:
 	const std::string getShaderSrcFontFragment();
 	const std::string getShaderSrcSkyboxVertex();
 	const std::string getShaderSrcSkyboxFragment();
-
+	const std::string getShaderSrcShadowmapVertex();
+	const std::string getShaderSrcShadowmapFragment();
+	const std::string getShaderSrcPbrVertex();
+	const std::string getShaderSrcPbrFragment();
+	const std::string getShaderSrcCubemapVertex();
+	const std::string getShaderSrcEquirectangularFragment();
+	const std::string getShaderSrcIrradianceFragment();
+	const std::string getShaderSrcPrefilterFragment();
+	const std::string getShaderSrcBrdfVertex();
+	const std::string getShaderSrcBrdfFragment();
+	const std::string getShaderSrcFboVertex();
+	const std::string getShaderSrcFboFragment();
 };
 
 #endif /* CORE_GRENDERER_H_ */

@@ -14,6 +14,9 @@
 #include <iterator>
 #include <unistd.h>
 
+bool gLog::isloggingenabled = true;
+std::string gLog::loglevelname[] = {"INFO", "DEBUG", "WARNING", "ERROR"};
+
 
 int gDefaultWidth() {
 	return 960;
@@ -21,6 +24,18 @@ int gDefaultWidth() {
 
 int gDefaultHeight() {
 	return 540;
+}
+
+int gDefaultUnitWidth() {
+	return 960;
+}
+
+int gDefaultUnitHeight() {
+	return 540;
+}
+
+int gDefaultScreenScaling() {
+	return 2;
 }
 
 float gRadToDeg(float radians) {
@@ -142,6 +157,19 @@ void gStringReplace(std::string& input, const std::string& searchStr, const std:
 	}
 }
 
+std::vector<std::string> gSplitString(const std::string& textToSplit, const std::string& delimiter) {
+	std::vector<std::string> tokens;
+	size_t prev = 0, pos = 0;
+	do {
+		pos = textToSplit.find(delimiter, prev);
+		if (pos == std::string::npos) pos = textToSplit.length();
+		std::string token = textToSplit.substr(prev, pos - prev);
+		if (!token.empty()) tokens.push_back(token);
+		prev = pos + delimiter.length();
+	} while (pos < textToSplit.length() && prev < textToSplit.length());
+	return tokens;
+}
+
 std::string gToLower(const std::string& src, const std::string & locale) {
 	std::string dst;
 	std::locale loc = gGetLocale(locale);
@@ -164,6 +192,109 @@ std::string gToUpper(const std::string& src, const std::string & locale) {
 	}catch(...){
 	}
 	return dst;
+}
+
+#ifdef WIN32
+std::string gCodepointToStr(unsigned int codepoint) {
+	char c;
+	wchar_t ch = (wchar_t)codepoint;
+	std::wctomb(&c, ch);
+	return std::string(1, c);
+}
+#else
+std::string gCodepointToStr(unsigned int codepoint) {
+	std::vector<unsigned char> result;
+	utf8::unchecked::utf32to8(&codepoint, &codepoint + 1, std::back_inserter(result));
+	std::stringstream strs;
+	for (int i = 0; i < result.size(); i++) strs << result[i];
+	return strs.str();
+}
+#endif
+
+
+static const std::string base64_chars =
+             "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+             "abcdefghijklmnopqrstuvwxyz"
+             "0123456789+/";
+
+
+std::string gEncodeBase64(unsigned const char* data, int len) {
+	std::string ret;
+	int i = 0;
+	int j = 0;
+	char char_array_3[3];
+	char char_array_4[4];
+
+	while (len--) {
+		char_array_3[i++] = *(data++);
+		if (i == 3) {
+			char_array_4[0] = (char_array_3[0] & 0xfc) >> 2;
+			char_array_4[1] = ((char_array_3[0] & 0x03) << 4) + ((char_array_3[1] & 0xf0) >> 4);
+			char_array_4[2] = ((char_array_3[1] & 0x0f) << 2) + ((char_array_3[2] & 0xc0) >> 6);
+			char_array_4[3] = char_array_3[2] & 0x3f;
+
+			for(i = 0; (i <4) ; i++) ret += base64_chars[char_array_4[i]];
+			i = 0;
+		}
+	}
+
+	if(i) {
+		for(j = i; j < 3; j++) char_array_3[j] = '\0';
+
+		char_array_4[0] = (char_array_3[0] & 0xfc) >> 2;
+		char_array_4[1] = ((char_array_3[0] & 0x03) << 4) + ((char_array_3[1] & 0xf0) >> 4);
+		char_array_4[2] = ((char_array_3[1] & 0x0f) << 2) + ((char_array_3[2] & 0xc0) >> 6);
+		char_array_4[3] = char_array_3[2] & 0x3f;
+
+		for (j = 0; (j < i + 1); j++) ret += base64_chars[char_array_4[j]];
+
+		while((i++ < 3)) ret += '=';
+	}
+
+	return ret;
+}
+
+
+std::string gDecodeBase64(const std::string& encodedString) {
+	int in_len = encodedString.size();
+	int i = 0;
+	int j = 0;
+	int in_ = 0;
+	char char_array_4[4], char_array_3[3];
+	std::vector<char> ret;
+
+	while (in_len-- && ( encodedString[in_] != '=') && gIsBase64(encodedString[in_])) {
+		char_array_4[i++] = encodedString[in_]; in_++;
+		if (i ==4) {
+			for (i = 0; i <4; i++) char_array_4[i] = base64_chars.find(char_array_4[i]);
+
+			char_array_3[0] = (char_array_4[0] << 2) + ((char_array_4[1] & 0x30) >> 4);
+			char_array_3[1] = ((char_array_4[1] & 0xf) << 4) + ((char_array_4[2] & 0x3c) >> 2);
+			char_array_3[2] = ((char_array_4[2] & 0x3) << 6) + char_array_4[3];
+
+			for (i = 0; (i < 3); i++) ret.push_back(char_array_3[i]);
+			i = 0;
+		}
+	}
+
+	if (i) {
+		for (j = i; j <4; j++) char_array_4[j] = 0;
+
+		for (j = 0; j <4; j++) char_array_4[j] = base64_chars.find(char_array_4[j]);
+
+		char_array_3[0] = (char_array_4[0] << 2) + ((char_array_4[1] & 0x30) >> 4);
+		char_array_3[1] = ((char_array_4[1] & 0xf) << 4) + ((char_array_4[2] & 0x3c) >> 2);
+		char_array_3[2] = ((char_array_4[2] & 0x3) << 6) + char_array_4[3];
+
+		for (j = 0; (j < i - 1); j++) ret.push_back(char_array_3[j]);
+	}
+
+	return std::string(ret.begin(), ret.end());
+}
+
+
+bool gIsBase64(char c) {
+	return (isalnum(c) || (c == '+') || (c == '/'));
 }
 
 
@@ -211,7 +342,15 @@ utf8::iterator<std::string::const_reverse_iterator> gUTF8Iterator::rend() const 
 }
 
 std::locale gGetLocale(const std::string & locale) {
-	return std::locale(locale.c_str());
+	std::locale loc;
+
+#ifdef APPLE
+	loc = std::locale(std::locale(), new std::ctype<char>);
+#else
+	loc = std::locale(locale.c_str());
+#endif
+
+	return loc;
 }
 
 int gToInt(const std::string& intString) {
@@ -221,6 +360,76 @@ int gToInt(const std::string& intString) {
 	return x;
 }
 
+std::string gWStrToStr(const std::wstring& WS) {
+	const unsigned wlen = WS.length();
+	char buf[wlen * sizeof(std::wstring::value_type) + 1];
+	const ssize_t res = std::wcstombs(buf, WS.c_str(), sizeof(buf));
+	return res != static_cast<std::size_t>(-1) ? buf : "?";
+}
+
+gLog::gLog() {
+	loglevel = LOGLEVEL_INFO;
+	logtag = "";
+}
+
+gLog::gLog(const std::string& tag) {
+	loglevel = LOGLEVEL_INFO;
+	logtag = tag;
+}
+
+gLog::~gLog() {
+	if(!isloggingenabled) return;
+
+	if(loglevel == LOGLEVEL_ERROR) {
+		std::cerr << "[" << loglevelname[loglevel] << "] " << logtag << ": " << logmessage.str() << std::endl;
+	} else {
+		std::cout << "[" << loglevelname[loglevel] << "] " << logtag << ": " << logmessage.str() << std::endl;
+	}
+}
+
+void gLog::setLoggingEnabled(bool isLoggingEnabled) {
+	isloggingenabled = isLoggingEnabled;
+}
+
+bool gLog::isLoggingEnabled() {
+	return isloggingenabled;
+}
+
+std::string gLog::getLogLevelName(int logLevel) {
+	return loglevelname[logLevel];
+}
+
+gLogi::gLogi(const std::string& tag) {
+	loglevel = LOGLEVEL_INFO;
+	logtag = tag;
+}
+
+gLogd::gLogd(const std::string& tag) {
+	loglevel = LOGLEVEL_DEBUG;
+	logtag = tag;
+}
+
+gLogw::gLogw(const std::string& tag) {
+	loglevel = LOGLEVEL_WARNING;
+	logtag = tag;
+}
+
+gLoge::gLoge(const std::string& tag) {
+	loglevel = LOGLEVEL_ERROR;
+	logtag = tag;
+}
+
+void gEnableLogging() {
+	gLog::setLoggingEnabled(true);
+}
+
+void gDisableLogging() {
+	gLog::setLoggingEnabled(false);
+}
+
+bool gIsLoggingEnabled() {
+	return gLog::isLoggingEnabled();
+}
 
 gUtils::gUtils() {
 

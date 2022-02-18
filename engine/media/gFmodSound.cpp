@@ -34,6 +34,7 @@ int gFmodSound::load(std::string fullPath) {
 //        Common_Fatal("FMOD lib version %08x doesn't match header version %08x", version, FMOD_VERSION);
     }
 
+
     result = FMOD_System_Init(system, 32, FMOD_INIT_NORMAL, extradriverdata);
 //    ERRCHECK(result);
 
@@ -45,9 +46,14 @@ int gFmodSound::load(std::string fullPath) {
     result = FMOD_Sound_SetMode(sound1, LOOPTYPE_DEFAULT);    /* drumloop.wav has embedded loop points which automatically makes looping turn on, */
 //    ERRCHECK(result);                           /* so turn it off here.  We could have also just put FMOD_LOOP_OFF in the above CreateSound call. */
 
+    //result = FMOD_Sound_GetName(sound1, fullPath.c_str(), namelen);
     isloaded = true;
 
     return 1;
+}
+
+int gFmodSound::loadSound(std::string soundPath) {
+	return load(gGetSoundsDir() + soundPath);
 }
 
 void gFmodSound::play() {
@@ -74,6 +80,12 @@ void gFmodSound::close() {
 	isloaded = false;
 }
 
+bool gFmodSound::isPlaying() {
+	FMOD_Channel_IsPlaying(channel, &ip);
+	isplaying = ip;
+	return isplaying;
+}
+
 int gFmodSound::getDuration() {
 	return duration;
 }
@@ -97,4 +109,5 @@ void gFmodSound::setVolume(float volume) {
 	gBaseSound::setVolume(volume);
 	FMOD_Channel_SetVolume(channel, volume);
 }
+
 

@@ -24,7 +24,7 @@ gModel::gModel() {
 	bbmaxx = 0.0f, bbmaxy = 0.0f, bbmaxz = 0.0f;
 }
 
-// TODO Clean ptrs if any
+
 gModel::~gModel() {
 }
 
@@ -38,21 +38,41 @@ void gModel::loadModel(std::string modelPath) {
 
 void gModel::loadModelFile(std::string fullPath) {
     // read file via ASSIMP
+#ifdef LINUX
+	std::shared_ptr<aiPropertyStore> store;
+    store.reset(aiCreatePropertyStore(), aiReleasePropertyStore);
+    // only ever give us triangles.
+    aiSetImportPropertyInteger(store.get(), AI_CONFIG_PP_SBP_REMOVE, aiPrimitiveType_LINE | aiPrimitiveType_POINT );
+    aiSetImportPropertyInteger(store.get(), AI_CONFIG_PP_PTV_NORMALIZE, true);
+
+    scene = aiImportFileExWithProperties(fullPath.c_str(), aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_CalcTangentSpace | aiProcessPreset_TargetRealtime_Fast, NULL, store.get());
+    // check for errors
+    if(!scene || (scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE) || !scene->mRootNode) { // if is Not Zero
+    	std::cout << "ERROR::ASSIMP:: " << aiGetErrorString() << std::endl;
+        return;
+    }
+#else
     Assimp::Importer importer;
-    importer.ReadFile(fullPath, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
+    importer.SetPropertyInteger(AI_CONFIG_PP_SBP_REMOVE, aiPrimitiveType_LINE | aiPrimitiveType_POINT);
+    importer.SetPropertyBool(AI_CONFIG_PP_PTV_NORMALIZE, true);
+    importer.ReadFile(fullPath, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_CalcTangentSpace | aiProcessPreset_TargetRealtime_Fast);
     scene = importer.GetOrphanedScene();
     // check for errors
     if(!scene || (scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE) || !scene->mRootNode) { // if is Not Zero
         std::cout << "ERROR::ASSIMP:: " << importer.GetErrorString() << std::endl;
         return;
     }
+#endif
+
     // retrieve the directory path of the filepath
     directory = fullPath.substr(0, fullPath.find_last_of('/'));
+    filename = fullPath.substr(fullPath.find_last_of('/') + 1, fullPath.length());
     animationnum = scene->mNumAnimations;
     isanimated = animationnum > 0;
 
     // process ASSIMP's root node recursively
     processNode(scene->mRootNode, scene);
+    initialboundingbox = getBoundingBox();
     if (isanimated) setAnimationFramerate(animationframerate);
     animate(0);
 }
@@ -67,9 +87,14 @@ void gModel::move(const glm::vec3 dv) {
 	for(unsigned int i = 0; i < meshes.size(); i++) meshes[i].move(dv);
 }
 
-void gModel::rotate(float angle, float ax, float ay, float az) {
-	gNode::rotate(angle, ax, ay, az);
-	for(unsigned int i = 0; i < meshes.size(); i++) meshes[i].rotate(angle, ax, ay, az);
+void gModel::rotate(float radians, float ax, float ay, float az) {
+	gNode::rotate(radians, ax, ay, az);
+	for(unsigned int i = 0; i < meshes.size(); i++) meshes[i].rotate(radians, ax, ay, az);
+}
+
+void gModel::rotateDeg(float degrees, float ax, float ay, float az) {
+	gNode::rotate(degrees, ax, ay, az);
+	for(unsigned int i = 0; i < meshes.size(); i++) meshes[i].rotateDeg(degrees, ax, ay, az);
 }
 
 void gModel::rotate(const glm::quat& q) {
@@ -90,6 +115,11 @@ void gModel::scale(float s) {
 void gModel::setPosition(float px, float py, float pz) {
 	gNode::setPosition(px, py, pz);
 	for(unsigned int i = 0; i < meshes.size(); i++) meshes[i].setPosition(px, py, pz);
+}
+
+void gModel::setPosition(const glm::vec3& p) {
+	gNode::setPosition(p);
+	for(unsigned int i = 0; i < meshes.size(); i++) meshes[i].setPosition(p);
 }
 
 void gModel::setOrientation(const glm::quat& o) {
@@ -137,14 +167,29 @@ void gModel::tilt(float radians) {
 	for(unsigned int i = 0; i < meshes.size(); i++) meshes[i].tilt(radians);
 }
 
+void gModel::tiltDeg(float degrees) {
+	gNode::tiltDeg(degrees);
+	for(unsigned int i = 0; i < meshes.size(); i++) meshes[i].tiltDeg(degrees);
+}
+
 void gModel::pan(float radians) {
 	gNode::pan(radians);
 	for(unsigned int i = 0; i < meshes.size(); i++) meshes[i].pan(radians);
 }
 
+void gModel::panDeg(float degrees) {
+	gNode::panDeg(degrees);
+	for(unsigned int i = 0; i < meshes.size(); i++) meshes[i].panDeg(degrees);
+}
+
 void gModel::roll(float radians) {
 	gNode::roll(radians);
 	for(unsigned int i = 0; i < meshes.size(); i++) meshes[i].roll(radians);
+}
+
+void gModel::rollDeg(float degrees) {
+	gNode::rollDeg(degrees);
+	for(unsigned int i = 0; i < meshes.size(); i++) meshes[i].rollDeg(degrees);
 }
 
 void gModel::setTransformationMatrix(glm::mat4 transformationMatrix) {
@@ -153,15 +198,41 @@ void gModel::setTransformationMatrix(glm::mat4 transformationMatrix) {
 }
 
 void gModel::draw() {
-	for(unsigned int i = 0; i < meshes.size(); i++) meshes[i].draw();
+	for(unsigned int i = 0; i < meshes.size(); i++) {
+//		gLogi("gModel") << "draw mesh no:" << i << ", name:" << scene->mMeshes[i]->mName.C_Str();
+		meshes[i].draw();
+	}
+}
+
+std::string gModel::getFilename() {
+	return filename;
+}
+
+std::string gModel::getFullpath() {
+	return directory + "/" + filename;
 }
 
 int gModel::getMeshNum() {
 	return meshes.size();
 }
 
+int gModel::getMeshNo(std::string meshName) {
+	for(unsigned int i = 0; i < meshes.size(); i++) {
+		if (meshName == scene->mMeshes[i]->mName.C_Str()) return i;
+	}
+	return -1;
+}
+
 gSkinnedMesh gModel::getMesh(int meshNo) {
 	return meshes[meshNo];
+}
+
+gSkinnedMesh* gModel::getMeshPtr(int meshNo) {
+	return &meshes[meshNo];
+}
+
+std::string gModel::getMeshName(int meshNo) {
+	return scene->mMeshes[meshNo]->mName.C_Str();
 }
 
 void gModel::processNode(aiNode *node, const aiScene *scene) {
@@ -170,8 +241,8 @@ void gModel::processNode(aiNode *node, const aiScene *scene) {
 		// the node object only contains indices to index the actual objects in the scene.
 		// the scene contains all the data, node is just to keep stuff organized (like relations between nodes).
 		aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
-		logi("Loading mesh:" + std::string(mesh->mName.C_Str()));
-		gSkinnedMesh modelmesh = processMesh(mesh, scene);
+		gLogi("gModel") << "Loading mesh:" << mesh->mName.C_Str() << ", tm:" << node->mTransformation[0];
+		gSkinnedMesh modelmesh = processMesh(mesh, scene, node->mTransformation);
 //		if (isanimated) updateBones(&modelmesh, mesh, scene);
 //		modelmesh.setParent(this);
 		meshes.push_back(modelmesh);
@@ -184,11 +255,11 @@ void gModel::processNode(aiNode *node, const aiScene *scene) {
 
 }
 
-gSkinnedMesh gModel::processMesh(aiMesh *mesh, const aiScene *scene) {
+gSkinnedMesh gModel::processMesh(aiMesh *mesh, const aiScene *scene, aiMatrix4x4 matrix) {
     // data to fill
     std::vector<gVertex> vertices;
     std::vector<unsigned int> indices;
-    std::vector<gTexture> textures;
+    glm::mat4 mat = convertMatrix(matrix);
 
     // walk through each of the mesh's vertices
     for(unsigned int i = 0; i < mesh->mNumVertices; i++) {
@@ -247,38 +318,36 @@ gSkinnedMesh gModel::processMesh(aiMesh *mesh, const aiScene *scene) {
     // specular: texture_specularN
     // normal: texture_normalN
 
-    // 1. diffuse maps
-    std::vector<gTexture> diffuseMaps = loadMaterialTextures(material, aiTextureType_DIFFUSE, gTexture::TEXTURETYPE_DIFFUSE);
-    textures.insert(textures.end(), diffuseMaps.begin(), diffuseMaps.end());
-    // 2. specular maps
-    std::vector<gTexture> specularMaps = loadMaterialTextures(material, aiTextureType_SPECULAR, gTexture::TEXTURETYPE_SPECULAR);
-    textures.insert(textures.end(), specularMaps.begin(), specularMaps.end());
-    // 3. normal maps
-    std::vector<gTexture> normalMaps = loadMaterialTextures(material, aiTextureType_HEIGHT, gTexture::TEXTURETYPE_NORMAL);
-    textures.insert(textures.end(), normalMaps.begin(), normalMaps.end());
-    // 4. height maps
-    std::vector<gTexture> heightMaps = loadMaterialTextures(material, aiTextureType_AMBIENT, gTexture::TEXTURETYPE_HEIGHT);
-    textures.insert(textures.end(), heightMaps.begin(), heightMaps.end());
-
     // return a mesh object created from the extracted mesh data
     gSkinnedMesh gmesh;
+    gmesh.setName(mesh->mName.C_Str());
     gmesh.setVertices(vertices,  indices);
-    gmesh.setTextures(textures);
+//    gmesh.setTransformationMatrix(convertMatrix(matrix));
+
+    loadMaterialTextures(&gmesh, material, aiTextureType_DIFFUSE, gTexture::TEXTURETYPE_DIFFUSE);
+    loadMaterialTextures(&gmesh, material, aiTextureType_SPECULAR, gTexture::TEXTURETYPE_SPECULAR);
+    loadMaterialTextures(&gmesh, material, aiTextureType_NORMALS, gTexture::TEXTURETYPE_NORMAL);
+    loadMaterialTextures(&gmesh, material, aiTextureType_HEIGHT, gTexture::TEXTURETYPE_HEIGHT);
+    loadMaterialTextures(&gmesh, material, aiTextureType_BASE_COLOR, gTexture::TEXTURETYPE_PBR_ALBEDO); // @suppress("Invalid arguments")
+    loadMaterialTextures(&gmesh, material, aiTextureType_DIFFUSE_ROUGHNESS, gTexture::TEXTURETYPE_PBR_ROUGHNESS);
+    loadMaterialTextures(&gmesh, material, aiTextureType_METALNESS, gTexture::TEXTURETYPE_PBR_METALNESS);
+    loadMaterialTextures(&gmesh, material, aiTextureType_NORMAL_CAMERA, gTexture::TEXTURETYPE_PBR_NORMAL);
+    loadMaterialTextures(&gmesh, material, aiTextureType_AMBIENT_OCCLUSION, gTexture::TEXTURETYPE_PBR_AO);
 
     return gmesh;
 }
 
-std::vector<gTexture> gModel::loadMaterialTextures(aiMaterial *mat, aiTextureType type, int textureType) {
-	std::vector<gTexture> textures;
+void gModel::loadMaterialTextures(gSkinnedMesh* mesh, aiMaterial *mat, aiTextureType type, int textureType) {
     for(unsigned int i = 0; i < mat->GetTextureCount(type); i++) {
+    	int texno = -1;
         aiString str;
         mat->GetTexture(type, i, &str);
         // check if texture was loaded before and if so, continue to next iteration: skip loading a new texture
         bool skip = false;
         for(unsigned int j = 0; j < textures_loaded.size(); j++) {
             if(std::strcmp(textures_loaded[j].getFilename().data(), str.C_Str()) == 0) {
-                textures.push_back(textures_loaded[j]);
                 skip = true; // a texture with the same filepath has already been loaded, continue to next one. (optimization)
+                texno = j;
                 break;
             }
         }
@@ -288,11 +357,12 @@ std::vector<gTexture> gModel::loadMaterialTextures(aiMaterial *mat, aiTextureTyp
             std::string tpath = this->directory + "/" + str.C_Str();
             texture.load(tpath);
             texture.setType(textureType);
-            textures.push_back(texture);
             textures_loaded.push_back(texture);  // store it as texture loaded for entire model, to ensure we won't unnecesery load duplicate textures.
+            texno = textures_loaded.size() - 1;
         }
+
+        mesh->setTexture(&textures_loaded[texno]);
     }
-    return textures;
 }
 
 bool gModel::isAnimated() {
@@ -653,25 +723,40 @@ bool gModel::isVertexAnimationStoredOnVram() {
 }
 
 gBoundingBox gModel::getBoundingBox() {
-	bbminx = 0.0f, bbminy = 0.0f, bbminz = 0.0f;
-	bbmaxx = 0.0f, bbmaxy = 0.0f, bbmaxz = 0.0f;
+	for (bbi = 0; bbi< meshes.size(); bbi++) {
+		bbvertices = meshes[bbi].getVertices();
+		for (bbj = 0; bbj < bbvertices.size(); bbj++) {
+			bbv = bbvertices[bbj];
+			bbvpos = glm::vec3(localtransformationmatrix * glm::vec4(bbv.position, 1.0));
 
-	for (int i = 0; i< meshes.size(); i++) {
-		std::vector<gVertex> vertices = meshes[i].getVertices();
-		for (int j = 0; j < vertices.size(); j++) {
-			gVertex v = vertices[j];
-			glm::vec3 vpos = glm::vec3(localtransformationmatrix * glm::vec4(v.position, 1.0));
+			if (bbi == 0 && bbj == 0) {
+				bbminx = bbvpos.x, bbminy = bbvpos.y, bbminz = bbvpos.z;
+				bbmaxx = bbvpos.x, bbmaxy = bbvpos.y, bbmaxz = bbvpos.z;
+				continue;
+			}
 
-			bbminx = std::min(bbminx, vpos.x);
-			bbminy = std::min(bbminy, vpos.y);
-			bbminz = std::min(bbminz, vpos.z);
-			bbmaxx = std::max(bbmaxx, vpos.x);
-			bbmaxy = std::max(bbmaxy, vpos.y);
-			bbmaxz = std::max(bbmaxz, vpos.z);
+			bbminx = std::min(bbminx, bbvpos.x);
+			bbminy = std::min(bbminy, bbvpos.y);
+			bbminz = std::min(bbminz, bbvpos.z);
+			bbmaxx = std::max(bbmaxx, bbvpos.x);
+			bbmaxy = std::max(bbmaxy, bbvpos.y);
+			bbmaxz = std::max(bbmaxz, bbvpos.z);
 		}
 	}
 
-	return gBoundingBox(bbminx, bbminy, bbminz, bbmaxx, bbmaxy, bbmaxz);
+	return gBoundingBox(bbminx, bbminy, bbminz, bbmaxx, bbmaxy, bbmaxz, localtransformationmatrix);
 }
 
+glm::mat4 gModel::convertMatrix(const aiMatrix4x4 &aiMat) {
+	return {
+	aiMat.a1, aiMat.b1, aiMat.c1, aiMat.d1,
+	aiMat.a2, aiMat.b2, aiMat.c2, aiMat.d2,
+	aiMat.a3, aiMat.b3, aiMat.c3, aiMat.d3,
+	aiMat.a4, aiMat.b4, aiMat.c4, aiMat.d4
+	};
+}
 
+gBoundingBox gModel::getInitialBoundingBox() {
+	initialboundingbox.setTransformationMatrix(localtransformationmatrix);
+	return initialboundingbox;
+}

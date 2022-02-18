@@ -53,9 +53,10 @@ gBaseWindow::gBaseWindow() {
 	signalname[30] = "SIGUSR1";
 	signalname[31] = "SIGUSR2";
 
+	vsync = false;
 	width = 0;
 	height = 0;
-	windowmode = WINDOWMODE_NONE;
+	windowmode = G_WINDOWMODE_NONE;
 	title = "GlistApp";
 
 	signal(SIGSEGV, sighandler);
@@ -87,6 +88,22 @@ void gBaseWindow::close() {
 
 }
 
+bool gBaseWindow::isVsyncEnabled() {
+	return vsync;
+}
+
+void gBaseWindow::enableVsync(bool vsync) {
+	this->vsync = vsync;
+}
+
+void gBaseWindow::setCursor(int cursorNo) {
+
+}
+
+void gBaseWindow::setCursorMode(int cursorMode) {
+
+}
+
 void gBaseWindow::setSize(int width, int height) {
 	this->width = width;
 	this->height = height;
@@ -109,6 +126,10 @@ std::string gBaseWindow::getTitle() {
 	return title;
 }
 
+void gBaseWindow::onCharEvent(unsigned int key) {
+	appmanager->onCharEvent(key);
+}
+
 void gBaseWindow::onKeyEvent(int key, int action) {
 	appmanager->onKeyEvent(key, action);
 }
@@ -123,6 +144,10 @@ void gBaseWindow::onMouseButtonEvent(int button, int action, double xpos, double
 
 void gBaseWindow::onMouseEnterEvent(int entered) {
 	appmanager->onMouseEnterEvent(entered);
+}
+
+void gBaseWindow::onMouseScrollEvent(double xoffset, double yoffset) {
+	appmanager->onMouseScrollEvent(xoffset, yoffset);
 }
 
 void gBaseWindow::sighandler(int signum) {

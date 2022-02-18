@@ -17,13 +17,18 @@
 #ifndef GRAPHICS_GRAY_H_
 #define GRAPHICS_GRAY_H_
 
+#include "gRenderObject.h"
+
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/quaternion.hpp>
 
+class gMesh;
+class gBoundingBox;
 
-class gRay {
+
+class gRay : public gRenderObject {
 public:
 	gRay();
 	gRay(const glm::vec3& originPoint, const glm::vec3& directionVector);
@@ -33,9 +38,27 @@ public:
 	void setDirection(const glm::vec3& directionVector);
 	glm::vec3 getOrigin();
 	glm::vec3 getDirection();
+	float getLength();
+
+	bool intersects(gBoundingBox& boundingBox);
+	float distance(gBoundingBox& boundingBox);
+
+	void link(gMesh* mesh, float rayScale = 1.0f, bool isNormalized = false, float dx = 0.0f, float dy = 0.0f, float dz = 0.0f);
+	void unlink();
+
+	void draw();
 
 private:
 	glm::vec3 origin, direction;
+	bool islinked;
+	gMesh* linkedmesh;
+	float scale;
+	bool isnormalized;
+	glm::vec3 pdiff;
+	float length;
+	glm::vec3 originpoint, directionpoint;
+	glm::vec3 linkedmeshpos;
+	glm::mat4 linkedmeshorientation;
 };
 
 #endif /* GRAPHICS_GRAY_H_ */

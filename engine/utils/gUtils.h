@@ -16,6 +16,12 @@
 #include <iostream>
 #include <iomanip>
 #include "utf8.h"
+#include <stdlib.h>
+#include <wchar.h>
+#include <vector>
+#include "gConstants.h"
+#include "gKeyCode.h"
+#include "gGUIEvents.h"
 
 /*
 #ifndef LINUX
@@ -67,6 +73,9 @@
 
 int gDefaultWidth();
 int gDefaultHeight();
+int gDefaultUnitWidth();
+int gDefaultUnitHeight();
+int gDefaultScreenScaling();
 
 float gRadToDeg(float radians);
 float gDegToRad(float degrees);
@@ -90,7 +99,7 @@ void gStringReplace(std::string& input, const std::string& searchStr, const std:
 std::locale gGetLocale(const std::string & locale);
 std::string gToLower(const std::string& src, const std::string & locale = "");
 std::string gToUpper(const std::string& src, const std::string & locale = "");
-
+std::vector<std::string> gSplitString(const std::string& textToSplit, const std::string& delimiter);
 
 template <class T>
 std::string gToStr(const T& numValue) {
@@ -107,11 +116,18 @@ std::string gToStr(const T& value, int width, char fill) {
 }
 
 int gToInt(const std::string& intString);
+std::string gWStrToStr(const std::wstring& s);
 
 template <typename T>
 int gSign(T val) {
     return (T(0) < val) - (val < T(0));
 }
+
+std::string gCodepointToStr(unsigned int codepoint);
+
+std::string gEncodeBase64(unsigned const char* input, int len);
+std::string gDecodeBase64(const std::string& encoded_string);
+bool gIsBase64(char c);
 
 class gUTF8Iterator{
 public:
@@ -125,6 +141,66 @@ private:
 	std::string src_valid;
 };
 
+class gLog {
+public:
+	enum {
+		LOGLEVEL_INFO,
+		LOGLEVEL_DEBUG,
+		LOGLEVEL_WARNING,
+		LOGLEVEL_ERROR
+	};
+
+	gLog();
+	gLog(const std::string& tag);
+	~gLog();
+
+	gLog& operator<<(std::ostream& (*func)(std::ostream&)){
+		func(logmessage);
+		return *this;
+	}
+
+	template <typename T>
+	gLog& operator<<(const T& value) {
+		logmessage << value;
+		return *this;
+	}
+
+	static void setLoggingEnabled(bool isLoggingEnabled);
+	static bool isLoggingEnabled();
+
+	static std::string getLogLevelName(int logLevel);
+
+protected:
+	static bool isloggingenabled;
+	int loglevel;
+	std::stringstream logmessage;
+	std::string logtag;
+	static std::string loglevelname[];
+};
+
+class gLogi : public gLog {
+public:
+	gLogi(const std::string& tag = "");
+};
+
+class gLogd : public gLog {
+public:
+	gLogd(const std::string& tag = "");
+};
+
+class gLogw : public gLog {
+public:
+	gLogw(const std::string& tag = "");
+};
+
+class gLoge : public gLog {
+public:
+	gLoge(const std::string& tag = "");
+};
+
+void gEnableLogging();
+void gDisableLogging();
+bool gIsLoggingEnabled();
 
 class gUtils {
 public:

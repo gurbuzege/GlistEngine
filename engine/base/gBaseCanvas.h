@@ -25,12 +25,16 @@ public:
 
 	virtual void keyPressed(int key);
 	virtual void keyReleased(int key);
+	virtual void charPressed(unsigned int codepoint);
 	virtual void mouseMoved(int x, int y );
 	virtual void mouseDragged(int x, int y, int button);
 	virtual void mousePressed(int x, int y, int button);
 	virtual void mouseReleased(int x, int y, int button);
+	virtual void mouseScrolled(int x, int y);
 	virtual void mouseEntered();
 	virtual void mouseExited();
+	virtual void windowResized(int w, int h);
+	virtual void onGuiEvent(int guiObjectId, int eventType, std::string value1 = "", std::string value2 = "");
 
 	virtual void showNotify();
 	virtual void hideNotify();
@@ -42,8 +46,6 @@ protected:
 
 	int getWidth();
 	int getHeight();
-	int getScreenWidth();
-	int getScreenHeight();
 
 	void setColor(int r, int g, int b, int a = 255);
 	void setColor(gColor color);

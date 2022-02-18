@@ -39,6 +39,10 @@ void gBaseCanvas::keyReleased(int key) {
 
 }
 
+void gBaseCanvas::charPressed(unsigned int codepoint) {
+
+}
+
 void gBaseCanvas::mouseMoved(int x, int y ) {
 
 }
@@ -55,11 +59,23 @@ void gBaseCanvas::mouseReleased(int x, int y, int button) {
 
 }
 
+void gBaseCanvas::mouseScrolled(int x, int y) {
+
+}
+
 void gBaseCanvas::mouseEntered() {
 
 }
 
 void gBaseCanvas::mouseExited() {
+
+}
+
+void gBaseCanvas::windowResized(int w, int h) {
+
+}
+
+void gBaseCanvas::onGuiEvent(int guiObjectId, int eventType, std::string value1, std::string value2) {
 
 }
 
@@ -78,14 +94,6 @@ int gBaseCanvas::getWidth() {
 
 int gBaseCanvas::getHeight() {
 	return renderer->getHeight();
-}
-
-int gBaseCanvas::getScreenWidth() {
-	return renderer->getScreenWidth();
-}
-
-int gBaseCanvas::getScreenHeight() {
-	return renderer->getScreenHeight();
 }
 
 
