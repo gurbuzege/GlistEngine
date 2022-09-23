@@ -38,26 +38,28 @@ public:
 	void addTexture(gTexture tex);
 	gTexture* getTexture(int textureNo);
 
-	std::vector<gVertex> getVertices();
-	std::vector<unsigned int> getIndices();
-	int getVerticesNum();
-	int getIndicesNum();
+	std::vector<gVertex>& getVertices();
+	std::vector<unsigned int>& getIndices();
+	int getVerticesNum() const;
+	int getIndicesNum() const;
 	gBoundingBox getBoundingBox();
 	gVbo* getVbo();
+	void clear();
 
 	void setName(std::string name);
-	std::string getName();
+	const std::string& getName() const;
 
 	void setDrawMode(int drawMode);
-	int getDrawMode();
+	int getDrawMode() const;
 
 	void setMaterial(gMaterial* material);
 	gMaterial* getMaterial();
 
 	void draw();
 
-    gBoundingBox getInitialBoundingBox();
+    const gBoundingBox& getInitialBoundingBox() const;
     bool intersectsTriangles(gRay* ray);
+    float distanceTriangles(gRay* ray);
 
 protected:
     void drawStart();

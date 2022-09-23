@@ -45,8 +45,10 @@ int gGetCullingDirection();
 
 void gDrawLine(float x1, float y1, float x2, float y2);
 void gDrawLine(float x1, float y1, float z1, float x2, float y2, float z2);
-
+void gDrawTriangle(float px, float py, float qx, float qy, float rx, float ry, bool is_filled = true);
 void gDrawCircle(float xCenter, float yCenter, float radius, bool isFilled = false, float numberOfSides = 64.0f);
+void gDrawCross(float x, float y, float width, float height, float thickness, bool isFilled);
+void gDrawArc(float xCenter, float yCenter, float radius, bool isFilled = true, int numberOfSides = 60, float degree = 360.0f, float rotate = 360.0f);
 void gDrawArrow(float x1, float y1, float length, float angle, float tipLength, float tipAngle);
 void gDrawRectangle(float x, float y, float w, float h, bool isFilled = false);
 void gDrawRectangle(float x, float y, float w, float h, bool isFilled, float thickness, float borderposition = 0.0f);
@@ -150,10 +152,10 @@ public:
 	void setProjectionMatrix2d(glm::mat4 projectionMatrix2d);
 	void setViewMatrix(glm::mat4 viewMatrix);
 	void setCameraPosition(glm::vec3 cameraPosition);
-	glm::mat4 getProjectionMatrix();
-	glm::mat4 getProjectionMatrix2d();
-	glm::mat4 getViewMatrix();
-	glm::vec3 getCameraPosition();
+	const glm::mat4& getProjectionMatrix() const;
+	const glm::mat4& getProjectionMatrix2d() const;
+	const glm::mat4& getViewMatrix() const;
+	const glm::vec3& getCameraPosition() const;
 	void backupMatrices();
 	void restoreMatrices();
 

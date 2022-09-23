@@ -17,11 +17,10 @@
 #endif
 
 
-void gStartEngine(gBaseApp* baseApp, std::string appName, int windowMode, int width, int height) {
+void gStartEngine(gBaseApp* baseApp, const std::string& appName, int windowMode, int width, int height) {
 	gAppManager appmanager;
 	gGLFWWindow gbwindow;
 	gbwindow.setAppManager(&appmanager);
-	if (appName == "") appName = "GlistApp";
 	gbwindow.setTitle(appName);
 	appmanager.setWindow(&gbwindow);
 	baseApp->setAppManager(&appmanager);
@@ -56,6 +55,7 @@ gAppManager::gAppManager() {
 	appname = "";
 	window = nullptr;
 	app = nullptr;
+	windowmode = G_WINDOWMODE_GAME;
 	canvas = nullptr;
 	canvasmanager = nullptr;
 	guimanager = nullptr;
@@ -80,12 +80,10 @@ gAppManager::gAppManager() {
 	canvasset = false;
 }
 
-gAppManager::~gAppManager() {
-}
-
-void gAppManager::runApp(std::string appName, gBaseApp *baseApp, int width, int height, int windowMode, int unitWidth, int unitHeight, int screenScaling) {
+void gAppManager::runApp(const std::string& appName, gBaseApp *baseApp, int width, int height, int windowMode, int unitWidth, int unitHeight, int screenScaling) {
 	appname = appName;
 	app = baseApp;
+	windowmode = windowMode;
 
 	// Create window
 	window->initialize(width, height, windowMode);
@@ -189,6 +187,10 @@ void gAppManager::setWindow(gBaseWindow *baseWindow) {
 	window = baseWindow;
 }
 
+int gAppManager::getWindowMode() {
+	return windowmode;
+}
+
 void gAppManager::setCursor(int cursorId) {
 	window->setCursor(cursorId);
 }
@@ -252,6 +254,14 @@ int gAppManager::getFramerate() {
 
 double gAppManager::getElapsedTime() {
 	return deltatime.count() / 1'000'000'000.0f;
+}
+
+void gAppManager::setClipboardString(std::string text) {
+	window->setClipboardString(text);
+}
+
+std::string gAppManager::getClipboardString() {
+	return window->getClipboardString();
 }
 
 void gAppManager::onCharEvent(unsigned int key) {
@@ -347,6 +357,7 @@ void gAppManager::onMouseEnterEvent(int entered) {
 
 void gAppManager::onMouseScrollEvent(double xoffset, double yoffset) {
 	if (!canvasmanager->getCurrentCanvas()) return;
+	if(guimanager->isframeset) guimanager->mouseScrolled(xoffset, yoffset);
 	for (upi = 0; upi < gBasePlugin::usedplugins.size(); upi++) gBasePlugin::usedplugins[upi]->mouseScrolled(xoffset, yoffset);
 	canvasmanager->getCurrentCanvas()->mouseScrolled(xoffset, yoffset);
 }

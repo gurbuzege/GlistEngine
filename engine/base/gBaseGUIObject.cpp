@@ -13,17 +13,25 @@ int gBaseGUIObject::lastid = -1;
 gColor* gBaseGUIObject::backgroundcolor;
 gColor* gBaseGUIObject::middlegroundcolor;
 gColor* gBaseGUIObject::foregroundcolor;
+gColor* gBaseGUIObject::textbackgroundcolor;
+gColor* gBaseGUIObject::navigationbackgroundcolor;
 gFont* gBaseGUIObject::font;
 gColor* gBaseGUIObject::fontcolor;
+gColor* gBaseGUIObject::navigationfontcolor;
 gColor* gBaseGUIObject::buttoncolor;
 gColor* gBaseGUIObject::pressedbuttoncolor;
 gColor* gBaseGUIObject::disabledbuttoncolor;
 gColor* gBaseGUIObject::buttonfontcolor;
 gColor* gBaseGUIObject::pressedbuttonfontcolor;
 gColor* gBaseGUIObject::disabledbuttonfontcolor;
-
+int gBaseGUIObject::focusid;
+int gBaseGUIObject::previousfocusid;
+gGUIActionManager gBaseGUIObject::actionmanager;
 
 gBaseGUIObject::gBaseGUIObject() {
+	root = nullptr;
+	topparent = nullptr;
+	parent = nullptr;
 	type = 0;
 	lastid++;
 	id = lastid;
@@ -38,6 +46,8 @@ gBaseGUIObject::gBaseGUIObject() {
 	height = 0;
 	isfocused = false;
 	iscursoron = false;
+	issizer = false;
+	iscontainer = false;
 }
 
 gBaseGUIObject::~gBaseGUIObject() {
@@ -57,6 +67,14 @@ void gBaseGUIObject::setEnabled(bool isEnabled) {
 
 bool gBaseGUIObject::isEnabled() {
 	return isenabled;
+}
+
+void gBaseGUIObject::setTopParent(gBaseGUIObject* parentGUIObject) {
+	topparent = parentGUIObject;
+}
+
+gBaseGUIObject* gBaseGUIObject::getTopParent() {
+	return topparent;
 }
 
 void gBaseGUIObject::setParent(gBaseGUIObject* parentGUIObject) {
@@ -93,12 +111,16 @@ void gBaseGUIObject::setBackgroundColor(gColor* backgroundColor) {
 	backgroundcolor = backgroundColor;
 }
 
+gColor* gBaseGUIObject::getBackgroundColor() {
+	return backgroundcolor;
+}
+
 void gBaseGUIObject::setMiddlegroundColor(gColor* middlegroundColor) {
 	middlegroundcolor = middlegroundColor;
 }
 
-gColor* gBaseGUIObject::getBackgroundColor() {
-	return backgroundcolor;
+gColor* gBaseGUIObject::getMiddlegroundColor() {
+	return middlegroundcolor;
 }
 
 void gBaseGUIObject::setForegroundColor(gColor* foregroundColor) {
@@ -107,6 +129,22 @@ void gBaseGUIObject::setForegroundColor(gColor* foregroundColor) {
 
 gColor* gBaseGUIObject::getForegroundColor() {
 	return foregroundcolor;
+}
+
+void gBaseGUIObject::setTextBackgroundColor(gColor* textBackgroundColor) {
+	textbackgroundcolor = textBackgroundColor;
+}
+
+gColor* gBaseGUIObject::getTextBackgroundColor() {
+	return textbackgroundcolor;
+}
+
+void gBaseGUIObject::setNavigationBackgroundColor(gColor* navigationBackgroundColor) {
+	navigationbackgroundcolor = navigationBackgroundColor;
+}
+
+gColor* gBaseGUIObject::getNavigationBackgroundColor() {
+	return navigationbackgroundcolor;
 }
 
 void gBaseGUIObject::setFont(gFont* font) {
@@ -123,6 +161,14 @@ void gBaseGUIObject::setFontColor(gColor* fontColor) {
 
 gColor* gBaseGUIObject::getFontColor() {
 	return fontcolor;
+}
+
+void gBaseGUIObject::setNavigationFontColor(gColor* navigationFontColor) {
+	navigationfontcolor = navigationFontColor;
+}
+
+gColor* gBaseGUIObject::getNavigationFontColor() {
+	return navigationfontcolor;
 }
 
 void gBaseGUIObject::setButtonColor(gColor* color) {
@@ -223,5 +269,9 @@ void gBaseGUIObject::windowResized(int w, int h) {
 
 void gBaseGUIObject::setRootApp(gBaseApp* root) {
 	this->root = root;
+}
+
+void gBaseGUIObject::onGUIEvent(int guiObjectId, int eventType, int sourceEventType, std::string value1, std::string value2) {
+
 }
 

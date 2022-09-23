@@ -19,7 +19,7 @@ public:
 	gMaterial();
 	virtual ~gMaterial();
 
-	bool isPBR();
+	bool isPBR() const;
 
 	void setAmbientColor(int r, int g, int b, int a = 255);
 	void setAmbientColor(float r, float g, float b, float a = 1.0f);
@@ -37,79 +37,79 @@ public:
 	gColor* getSpecularColor();
 
 	void setShininess(float shininess);
-	float getShininess();
+	float getShininess() const;
 
-	void loadDiffuseMap(std::string texturePath);
+	void loadDiffuseMap(const std::string& texturePath);
 	void setDiffuseMap(gTexture* diffuseMap);
 	gTexture* getDiffuseMap();
-	void bindDiffuseMap();
-	void unbindDiffuseMap();
+	void bindDiffuseMap() const;
+	void unbindDiffuseMap() const;
 	void setDiffuseMapEnabled(bool enableDiffuseMap);
-	bool isDiffuseMapEnabled();
+	bool isDiffuseMapEnabled() const;
 
-	void loadSpecularMap(std::string texturePath);
+	void loadSpecularMap(const std::string& texturePath);
 	void setSpecularMap(gTexture* specularMap);
 	gTexture* getSpecularMap();
-	void bindSpecularMap();
-	void unbindSpecularMap();
+	void bindSpecularMap() const;
+	void unbindSpecularMap() const;
 	void setSpecularMapEnabled(bool enableSpecularMap);
-	bool isSpecularMapEnabled();
+	bool isSpecularMapEnabled() const;
 
-	void loadNormalMap(std::string texturePath);
+	void loadNormalMap(const std::string& texturePath);
 	void setNormalMap(gTexture* normalMap);
 	gTexture* getNormalMap();
-	void bindNormalMap();
-	void unbindNormalMap();
+	void bindNormalMap() const;
+	void unbindNormalMap() const;
 	void setNormalMapEnabled(bool enableNormalMap);
-	bool isNormalMapEnabled();
+	bool isNormalMapEnabled() const;
 
-	void loadHeightMap(std::string texturePath);
+	void loadHeightMap(const std::string& texturePath);
 	void setHeightMap(gTexture* heightMap);
 	gTexture* getHeightMap();
-	void bindHeightMap();
-	void unbindHeightMap();
+	void bindHeightMap() const;
+	void unbindHeightMap() const;
 	void setHeightMapEnabled(bool enableHeightMap);
-	bool isHeightMapEnabled();
+	bool isHeightMapEnabled() const;
 
-	void loadAlbedoMap(std::string texturePath);
+	void loadAlbedoMap(const std::string& texturePath);
 	void setAlbedoMap(gTexture* albedoMap);
 	gTexture* getAlbedoMap();
-	void bindAlbedoMap(int slotNo = 3);
-	void unbindAlbedoMap();
+	void bindAlbedoMap(int slotNo = 3) const;
+	void unbindAlbedoMap() const;
 	void setAlbedoMapEnabled(bool enableNormalMap);
-	bool isAlbedoMapEnabled();
+	bool isAlbedoMapEnabled() const;
 
-	void loadRoughnessMap(std::string texturePath);
+	void loadRoughnessMap(const std::string& texturePath);
 	void setRoughnessMap(gTexture* roughnessMap);
 	gTexture* getRoughnessMap();
-	void bindRoughnessMap(int slotNo = 6);
-	void unbindRoughnessMap();
+	void bindRoughnessMap(int slotNo = 6) const;
+	void unbindRoughnessMap() const;
 	void setRoughnessMapEnabled(bool enableRoughnessMap);
-	bool isRoughnessMapEnabled();
+	bool isRoughnessMapEnabled() const;
 
-	void loadMetalnessMap(std::string texturePath);
+	void loadMetalnessMap(const std::string& texturePath);
 	void setMetalnessMap(gTexture* metalnessMap);
 	gTexture* getMetalnessMap();
 	void bindMetalnessMap(int slotNo = 5);
-	void unbindMetalnessMap();
+	void unbindMetalnessMap() const;
 	void setMetalnessMapEnabled(bool enableMetalnessMap);
-	bool isMetalnessMapEnabled();
+	bool isMetalnessMapEnabled() const;
 
-	void loadPbrNormalMap(std::string texturePath);
+	void loadPbrNormalMap(const std::string& texturePath);
 	void setPbrNormalMap(gTexture* pbrNormalMap);
 	gTexture* getPbrNormalMap();
-	void bindPbrNormalMap(int slotNo = 4);
-	void unbindPbrNormalMap();
+	void bindPbrNormalMap(int slotNo = 4) const;
+	void unbindPbrNormalMap() const;
 	void setPbrNormalMapEnabled(bool enablePbrNormalMap);
-	bool isPbrNormalMapEnabled();
+	bool isPbrNormalMapEnabled() const;
 
-	void loadAOMap(std::string texturePath);
+	void loadAOMap(const std::string& texturePath);
 	void setAOMap(gTexture* aoMap);
 	gTexture* getAOMap();
-	void bindAOMap(int slotNo = 7);
-	void unbindAOMap();
+	void bindAOMap(int slotNo = 7) const;
+	void unbindAOMap() const;
 	void setAOMapEnabled(bool enableAOMap);
-	bool isAOMapEnabled();
+	bool isAOMapEnabled() const;
 
 private:
     gColor ambient;

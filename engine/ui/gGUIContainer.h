@@ -8,16 +8,17 @@
 #ifndef UI_GGUICONTAINER_H_
 #define UI_GGUICONTAINER_H_
 
-#include "gGUIControl.h"
+#include "gGUIScrollable.h"
 #include "gGUISizer.h"
 
 
-class gGUIContainer: public gGUIControl {
+class gGUIContainer: public gGUIScrollable {
 public:
 	gGUIContainer();
 	virtual ~gGUIContainer();
 
-	void set(int x, int y, int w, int h);
+	virtual void set(gBaseApp* root, gBaseGUIObject* topParentGUIObject, gBaseGUIObject* parentGUIObject, int parentSlotLineNo, int parentSlotColumnNo, int x, int y, int w, int h);
+	virtual void set(int x, int y, int w, int h);
 
 	void setSizer(gGUISizer* guiSizer);
 	gGUISizer* getSizer();
@@ -31,6 +32,7 @@ public:
 	virtual void mouseDragged(int x, int y, int button);
 	virtual void mouseReleased(int x, int y, int button);
 	virtual void mouseScrolled(int x, int y);
+	virtual void windowResized(int w, int h);
 
 	void update();
 	void draw();

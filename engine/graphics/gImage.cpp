@@ -9,7 +9,11 @@
 //#ifndef STB_IMAGE_IMPLEMENTATION
 //#define STB_IMAGE_IMPLEMENTATION
 //#endif
+#ifndef STB_IMAGE_WRITE_IMPLEMENTATION
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#endif
 #include "stb/stb_image.h"
+#include "stb/stb_image_write.h"
 
 
 gImage::gImage() {
@@ -22,7 +26,7 @@ gImage::gImage(int w, int h, int format) : gTexture(w, h, format, false) {
 gImage::~gImage() {
 }
 
-unsigned int gImage::load(std::string fullPath) {
+unsigned int gImage::load(const std::string& fullPath) {
 	fullpath = fullPath;
 	directory = getDirName(fullpath);
 	path = getFileName(fullpath);
@@ -44,11 +48,11 @@ unsigned int gImage::load(std::string fullPath) {
     return id;
 }
 
-unsigned int gImage::loadImage(std::string imagePath) {
+unsigned int gImage::loadImage(const std::string& imagePath) {
 	return load(gGetImagesDir() + imagePath);
 }
 
-void gImage::loadData(std::string fullPath) {
+void gImage::loadData(const std::string& fullPath) {
 	fullpath = fullPath;
 	directory = getDirName(fullpath);
 	path = getFileName(fullpath);
@@ -63,7 +67,7 @@ void gImage::loadData(std::string fullPath) {
     }
 }
 
-void gImage::loadImageData(std::string imagePath) {
+void gImage::loadImageData(const std::string& imagePath) {
 	loadData(gGetImagesDir() + imagePath);
 }
 
@@ -104,4 +108,12 @@ void gImage::clearData() {
 	if (ishdr) stbi_image_free(datahdr);
 	else stbi_image_free(data);
 }
+
+void gImage::saveImage(std::string fileName) {
+    std::string path = gGetImagesDir() + fileName;
+    stbi_write_png(path.c_str(), width, height, componentnum, data, width * componentnum * sizeof(unsigned char));
+}
+
+
+
 

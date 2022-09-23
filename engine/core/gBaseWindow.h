@@ -64,6 +64,9 @@ public:
 	virtual void setCursor(int cursorNo);
 	virtual void setCursorMode(int cursorMode);
 
+	virtual void setClipboardString(std::string text);
+	virtual std::string getClipboardString();
+
 	/**
 	 * Sets game window size.
 	 *
@@ -91,14 +94,15 @@ public:
 	 *
 	 * @param windowTitle The text to be written in the title of the window.
 	 */
-	void setTitle(std::string windowTitle);
+	void setTitle(const std::string& windowTitle);
+	void setTitle(std::string&& windowTitle);
 
 	/**
 	 * Gets the title at the top of the window.
 	 *
 	 * @return Returns the title at the top of the window.
 	 */
-	std::string getTitle();
+	const std::string& getTitle() const;
 
 	/*
 	 * Gets called each time a key is pressed on the keyboard.

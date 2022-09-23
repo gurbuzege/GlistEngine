@@ -77,7 +77,7 @@ class gCanvasManager;
  * User should choose this parameter suitable according to their screen resolution
  * to prevent distorted images.
  */
-void gStartEngine(gBaseApp* baseApp, std::string appName = "GlistApp", int windowMode = 2, int width = gDefaultWidth(), int height = gDefaultHeight());
+void gStartEngine(gBaseApp* baseApp, const std::string& appName = "GlistApp", int windowMode = 2, int width = gDefaultWidth(), int height = gDefaultHeight());
 
 /**
  * Sets the app settings for engine according to given name, mode of window,
@@ -163,14 +163,6 @@ public:
 	 */
 	gAppManager();
 
-	/**
-	 * Virtual destructor of gAppManager class. Destructor is called when the lifetime
-	 * of an object ends. The purpose of the destructor is to free the resources that
-	 * the object may have acquired during its lifetime. This destructor is virtual
-	 * because Deleting an object through pointer to base invokes undefined behavior.
-	 */
-	virtual ~gAppManager();
-
     /**
 	 * Gathers all the settings from gStartEngine functions and creates a new window
 	 * with given app name, width, height and window mode. Constructs a temp canvas
@@ -219,7 +211,7 @@ public:
 	 * @param screenScaling how much everything should be enlarged when measured in
 	 * pixels.
 	 */
-	void runApp(std::string appName, gBaseApp *baseApp, int width, int height, int windowMode, int unitWidth, int unitHeight, int screenScaling);
+	void runApp(const std::string& appName, gBaseApp *baseApp, int width, int height, int windowMode, int unitWidth, int unitHeight, int screenScaling);
 
 	/**
 	 * Completely replace the current gBaseWindow with the specified gBaseWindow.
@@ -227,6 +219,13 @@ public:
 	 * @param baseWindow new gBaseWindow to replace.
 	 */
 	void setWindow(gBaseWindow * baseWindow);
+
+	/**
+	 * Returns the window mode of the application.
+	 *
+	 * @return window mode.
+	 */
+	int getWindowMode();
 
 	void setCursor(int cursorId);
 	void setCursorMode(int cursorMode);
@@ -424,6 +423,9 @@ public:
 	void enableVsync();
 	void disableVsync();
 
+	void setClipboardString(std::string text);
+	std::string getClipboardString();
+
 private:
 	using AppClock = std::chrono::steady_clock;
 	using AppClockDuration = AppClock::duration;
@@ -435,6 +437,7 @@ private:
 	std::string appname;
 	gBaseWindow* window;
 	gBaseApp* app;
+	int windowmode;
 	gBaseCanvas* canvas;
 	gCanvasManager* canvasmanager;
 	gGUIManager* guimanager;

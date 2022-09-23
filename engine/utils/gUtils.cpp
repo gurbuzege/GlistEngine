@@ -360,6 +360,20 @@ int gToInt(const std::string& intString) {
 	return x;
 }
 
+float gToFloat(const std::string& floatString) {
+	float f;
+	std::istringstream ff(floatString);
+	ff >> f;
+	return f;
+}
+
+double gToDouble(const std::string& doubleString) {
+	double d;
+	std::istringstream dd(doubleString);
+	dd >> d;
+	return d;
+}
+
 std::string gWStrToStr(const std::wstring& WS) {
 	const unsigned wlen = WS.length();
 	char buf[wlen * sizeof(std::wstring::value_type) + 1];
@@ -431,6 +445,40 @@ bool gIsLoggingEnabled() {
 	return gLog::isLoggingEnabled();
 }
 
+std::string gShowOpenFileDialog(
+		std::string dialogTitle,
+		std::string defaultPathAndFile,
+	    int filterNum,
+		std::string* filterPatterns,
+		std::string filterDescription,
+	    bool isMultipleSelectionAllowed) {
+	std::string resstr = "";
+	const char* carray[filterNum];
+	for(int i = 0; i < filterNum; i++) carray[i] = filterPatterns[i].c_str();
+	char* res = tinyfd_openFileDialog(
+			dialogTitle.c_str(),
+			defaultPathAndFile.c_str(),
+			filterNum,
+			carray,
+			filterDescription.c_str(),
+			isMultipleSelectionAllowed);
+	if(res) resstr = std::string(res);
+	return resstr;
+}
+
+int gShowMessageBox(
+		std::string aTitle , /* NULL or "" */
+		std::string aMessage , /* NULL or ""  may contain \n and \t */
+		std::string aDialogType , /* "ok" "okcancel" "yesno" "yesnocancel" */
+		std::string aIconType , /* "info" "warning" "error" "question" */
+		int aDefaultButton ) {
+	return tinyfd_messageBox(
+			aTitle.c_str(),
+			aMessage.c_str(),
+			aDialogType.c_str(),
+			aIconType.c_str(),
+			aDefaultButton);
+}
 gUtils::gUtils() {
 
 }

@@ -13,8 +13,14 @@
 gGUIManager::gGUIManager(gBaseApp* root) {
 	this->root = root;
 	isframeset = false;
+	selecteddialogue = nullptr;
 	loadThemes();
 	resetTheme(GUITHEME_LIGHT);
+	if(root->getAppManager()->getWindowMode() == G_WINDOWMODE_GUIAPP) {
+		setCurrentFrame(&emptyframe);
+		emptyframe.setSizer(&emptysizer);
+		emptysizer.enableBackgroundFill(true);
+	}
 }
 
 gGUIManager::~gGUIManager() {
@@ -41,49 +47,100 @@ void gGUIManager::setCurrentFrame(gGUIFrame* currentFrame) {
 	isframeset = true;
 }
 
+void gGUIManager::setupDialogue(gGUIDialogue* dialogue) {
+	dialogue->setParentSlotNo(0, 0);
+	dialogue->width = root->getAppManager()->getCurrentCanvas()->getScreenWidth() / 1 * 0.84f;
+	dialogue->height = root->getAppManager()->getCurrentCanvas()->getScreenHeight() / 1 * 0.84f;
+	dialogue->left = (root->getAppManager()->getCurrentCanvas()->getScreenWidth() - dialogue->width) / 2;
+	dialogue->top = (root->getAppManager()->getCurrentCanvas()->getScreenHeight() - dialogue->height) / 2;
+	dialogue->right = dialogue->left + dialogue->width;
+	dialogue->bottom = dialogue->top + dialogue->height;
+	dialogue->setRootApp(root);
+
+	defdialoguesizer.setSize(1, 1);
+	defdialoguesizer.enableBorders(false);
+	dialogue->setSizer(&defdialoguesizer);
+
+	dialogue->getSizer()->enableBackgroundFill(false);
+	dialogue->resetTitleBar();
+	dialogue->resetButtonsBar();
+
+	dialogues.push_back(dialogue);
+}
+
 gGUIFrame* gGUIManager::getCurrentFrame() {
 	return currentframe;
 }
 
 void gGUIManager::keyPressed(int key) {
 	currentframe->keyPressed(key);
+	for (int i = 0; i < dialogues.size(); i++) {
+		if (dialogues[i]->getIsDialogueActive()) dialogues[i]->keyPressed(key);
+	}
 }
 
 void gGUIManager::keyReleased(int key) {
 	currentframe->keyReleased(key);
+	for (int i = 0; i < dialogues.size(); i++) {
+		if (dialogues[i]->getIsDialogueActive()) dialogues[i]->keyReleased(key);
+	}
 }
 
 void gGUIManager::charPressed(unsigned int key) {
 	currentframe->charPressed(key);
+	for (int i = 0; i < dialogues.size(); i++) {
+		if (dialogues[i]->getIsDialogueActive()) dialogues[i]->charPressed(key);
+	}
 }
 
 void gGUIManager::mouseMoved(int x, int y) {
 	root->getAppManager()->setCursor(currentframe->getCursor(x, y));
 	currentframe->mouseMoved(x, y);
+
+	for (int i = 0; i < dialogues.size(); i++) {
+		if (dialogues[i]->getIsDialogueActive()) {
+			root->getAppManager()->setCursor(dialogues[i]->getCursor(x, y));
+			dialogues[i]->mouseMoved(x, y);
+		}
+	}
 }
 
 void gGUIManager::mousePressed(int x, int y, int button) {
-	currentframe->mousePressed(x, y, button);
+	if (selecteddialogue == nullptr) currentframe->mousePressed(x, y, button);
+	else selecteddialogue->mousePressed(x, y, button);
 }
 
 void gGUIManager::mouseDragged(int x, int y, int button) {
-	currentframe->mouseDragged(x, y, button);
+	if (selecteddialogue == nullptr) currentframe->mouseDragged(x, y, button);
+	else selecteddialogue->mouseDragged(x, y, button);
 }
 
 void gGUIManager::mouseReleased(int x, int y, int button) {
 	currentframe->mouseReleased(x, y, button);
+	for (int i = 0; i < dialogues.size(); i++) {
+		if (dialogues[i]->getIsDialogueActive()) dialogues[i]->mouseReleased(x, y, button);
+	}
 }
 
 void gGUIManager::mouseScrolled(int x, int y) {
 	currentframe->mouseScrolled(x, y);
+	for (int i = 0; i < dialogues.size(); i++) {
+		if (dialogues[i]->getIsDialogueActive()) dialogues[i]->mouseScrolled(x, y);
+	}
 }
 
 void gGUIManager::mouseEntered() {
 	currentframe->mouseEntered();
+	for (int i = 0; i < dialogues.size(); i++) {
+		if (dialogues[i]->getIsDialogueActive()) dialogues[i]->mouseEntered();
+	}
 }
 
 void gGUIManager::mouseExited() {
 	currentframe->mouseExited();
+	for (int i = 0; i < dialogues.size(); i++) {
+		if (dialogues[i]->getIsDialogueActive()) dialogues[i]->mouseEntered();
+	}
 }
 
 void gGUIManager::windowResized(int w, int h) {
@@ -94,10 +151,58 @@ void gGUIManager::windowResized(int w, int h) {
 
 void gGUIManager::update() {
 	currentframe->update();
+
+	for (int i = dialogues.size() - 1; i >= 0; i--) {
+		if (dialogues[i]->getIsDialogueActive()) {selecteddialogue = dialogues[i]; break;}
+		selecteddialogue = nullptr;
+	}
+
+	if (selecteddialogue != nullptr) {
+		selecteddialogue->update();
+		if (selecteddialogue->getButtonEvent() == gGUIDialogue::EVENT_EXIT) {
+			selecteddialogue->setIsDialogueActive(false);
+			selecteddialogue->setButtonEvent(gGUIDialogue::EVENT_NONE);
+		}
+		if (selecteddialogue->getButtonEvent() == gGUIDialogue::EVENT_MINIMIZE) {
+			selecteddialogue->setIsDialogueActive(false);
+			selecteddialogue->setButtonEvent(gGUIDialogue::EVENT_NONE);
+		}
+		if (selecteddialogue->getButtonEvent() == gGUIDialogue::EVENT_MAXIMIZE) {
+			int titlebarheight = selecteddialogue->getTitleBar()->height;
+			int buttonsbarheight = selecteddialogue->getButtonsBar()->height;
+			int twidth = root->getAppManager()->getCurrentCanvas()->getScreenWidth();
+			int theight = root->getAppManager()->getCurrentCanvas()->getScreenHeight() - titlebarheight - buttonsbarheight;
+			int tleft = 0;
+			int ttop = titlebarheight;
+			selecteddialogue->transformDialogue(tleft, ttop, twidth, theight);
+
+			selecteddialogue->setIsMaximized(true);
+
+			selecteddialogue->resetTitleBar();
+			selecteddialogue->resetButtonsBar();
+			selecteddialogue->setButtonEvent(gGUIDialogue::EVENT_NONE);
+		}
+		if (selecteddialogue->getButtonEvent() == gGUIDialogue::EVENT_RESTORE) {
+			int twidth = root->getAppManager()->getCurrentCanvas()->getScreenWidth() / 1 * 0.84f;
+			int theight = root->getAppManager()->getCurrentCanvas()->getScreenHeight() / 1 * 0.84f;
+			int tleft = (root->getAppManager()->getCurrentCanvas()->getScreenWidth() - twidth) / 2;
+			int ttop = (root->getAppManager()->getCurrentCanvas()->getScreenHeight() - theight) / 2;
+			selecteddialogue->transformDialogue(tleft, ttop, twidth, theight);
+
+			selecteddialogue->setIsMaximized(false);
+
+			selecteddialogue->resetTitleBar();
+			selecteddialogue->resetButtonsBar();
+			selecteddialogue->setButtonEvent(gGUIDialogue::EVENT_NONE);
+		}
+	}
 }
 
 void gGUIManager::draw() {
 	currentframe->draw();
+	for (int i = 0; i < dialogues.size(); i++) {
+		if (dialogues[i]->getIsDialogueActive()) dialogues[i]->draw();
+	}
 }
 
 void gGUIManager::resetTheme(int guiTheme) {
@@ -105,8 +210,11 @@ void gGUIManager::resetTheme(int guiTheme) {
 	gBaseGUIObject::setBackgroundColor(&themebackgroundcolor[guitheme]);
 	gBaseGUIObject::setMiddlegroundColor(&thememiddlegroundcolor[guitheme]);
 	gBaseGUIObject::setForegroundColor(&themeforegroundcolor[guitheme]);
+	gBaseGUIObject::setTextBackgroundColor(&themetextbackgroundcolor[guitheme]);
+	gBaseGUIObject::setNavigationBackgroundColor(&themenavigationbackgroundcolor[guitheme]);
 	gBaseGUIObject::setFont(&themefont);
 	gBaseGUIObject::setFontColor(&themefontcolor[guitheme]);
+	gBaseGUIObject::setNavigationFontColor(&themenavigationfontcolor[guitheme]);
 	gBaseGUIObject::setButtonColor(&themebuttoncolor[guitheme]);
 	gBaseGUIObject::setPressedButtonColor(&themepressedbuttoncolor[guitheme]);
 	gBaseGUIObject::setDisabledButtonColor(&themedisabledbuttoncolor[guitheme]);
@@ -131,12 +239,27 @@ void gGUIManager::loadThemes() {
 	themeforegroundcolor[GUITHEME_LIGHTBLUE] = gColor(195.0f / 255.0f, 224.0f / 255.0f, 235.0f / 255.0f);
 	themeforegroundcolor[GUITHEME_DARKBLUE] = gColor(28.0f / 255.0f, 40.0f / 255.0f, 53.0f / 255.0f);
 
+	themetextbackgroundcolor[GUITHEME_LIGHT] = gColor(255.0f / 255.0f, 255.0f / 255.0f, 255.0f / 255.0f);
+	themetextbackgroundcolor[GUITHEME_DARK] = gColor(39.0f / 255.0f, 39.0f / 255.0f, 39.0f / 255.0f);
+	themetextbackgroundcolor[GUITHEME_LIGHTBLUE] = gColor(255.0f / 255.0f, 255.0f / 255.0f, 255.0f / 255.0f);
+	themetextbackgroundcolor[GUITHEME_DARKBLUE] = gColor(0.0f / 255.0f, 0.0f / 255.0f, 0.0f / 255.0f);
+
+	themenavigationbackgroundcolor[GUITHEME_LIGHT] = gColor(0.0f / 255.0f, 40.0f / 255.0f, 80.0f / 255.0f);
+	themenavigationbackgroundcolor[GUITHEME_DARK] = gColor(195.0f / 255.0f, 224.0f / 255.0f, 235.0f / 255.0f);
+	themenavigationbackgroundcolor[GUITHEME_LIGHTBLUE] = gColor(195.0f / 255.0f, 224.0f / 255.0f, 235.0f / 255.0f);
+	themenavigationbackgroundcolor[GUITHEME_DARKBLUE] = gColor(195.0f / 255.0f, 224.0f / 255.0f, 235.0f / 255.0f);
+
 	themefont.loadFont("FreeSans.ttf", 11);
 
 	themefontcolor[GUITHEME_LIGHT] = gColor(5.0f / 255.0f, 5.0f / 255.0f, 5.0f / 255.0f);
 	themefontcolor[GUITHEME_DARK] = gColor(220.0f / 255.0f, 220.0f / 255.0f, 220.0f / 255.0f);
 	themefontcolor[GUITHEME_LIGHTBLUE] = gColor(5.0f / 255.0f, 5.0f / 255.0f, 5.0f / 255.0f);
 	themefontcolor[GUITHEME_DARKBLUE] = gColor(28.0f / 255.0f, 40.0f / 255.0f, 53.0f / 255.0f);
+
+	themenavigationfontcolor[GUITHEME_LIGHT] = gColor(255.0f / 255.0f, 255.0f / 255.0f, 255.0f / 255.0f);
+	themenavigationfontcolor[GUITHEME_DARK] = gColor(255.0f / 255.0f, 255.0f / 255.0f, 255.0f / 255.0f);
+	themenavigationfontcolor[GUITHEME_LIGHTBLUE] = gColor(255.0f / 255.0f, 255.0f / 255.0f, 255.0f / 255.0f);
+	themenavigationfontcolor[GUITHEME_DARKBLUE] = gColor(255.0f / 255.0f, 255.0f / 255.0f, 255.0f / 255.0f);
 
 	themebuttoncolor[GUITHEME_LIGHT] = gColor(209.0f / 255.0f, 209.0f / 255.0f, 209.0f / 255.0f);
 	themebuttoncolor[GUITHEME_DARK] = gColor(109.0f / 255.0f, 109.0f / 255.0f, 109.0f / 255.0f);
@@ -148,7 +271,7 @@ void gGUIManager::loadThemes() {
 	themepressedbuttoncolor[GUITHEME_LIGHTBLUE] = gColor(5.0f / 255.0f, 5.0f / 255.0f, 5.0f / 255.0f);
 	themepressedbuttoncolor[GUITHEME_DARKBLUE] = gColor(28.0f / 255.0f, 40.0f / 255.0f, 53.0f / 255.0f);
 
-	themedisabledbuttoncolor[GUITHEME_LIGHT] = gColor(5.0f / 255.0f, 5.0f / 255.0f, 5.0f / 255.0f);
+	themedisabledbuttoncolor[GUITHEME_LIGHT] = gColor(209.0f / 255.0f, 209.0f / 255.0f, 209.0f / 255.0f);
 	themedisabledbuttoncolor[GUITHEME_DARK] = gColor(109.0f / 255.0f, 109.0f / 255.0f, 109.0f / 255.0f);
 	themedisabledbuttoncolor[GUITHEME_LIGHTBLUE] = gColor(5.0f / 255.0f, 5.0f / 255.0f, 5.0f / 255.0f);
 	themedisabledbuttoncolor[GUITHEME_DARKBLUE] = gColor(28.0f / 255.0f, 40.0f / 255.0f, 53.0f / 255.0f);
@@ -163,10 +286,9 @@ void gGUIManager::loadThemes() {
 	themepressedbuttonfontcolor[GUITHEME_LIGHTBLUE] = gColor(5.0f / 255.0f, 5.0f / 255.0f, 5.0f / 255.0f);
 	themepressedbuttonfontcolor[GUITHEME_DARKBLUE] = gColor(28.0f / 255.0f, 40.0f / 255.0f, 53.0f / 255.0f);
 
-	themedisabledbuttonfontcolor[GUITHEME_LIGHT] = gColor(5.0f / 255.0f, 5.0f / 255.0f, 5.0f / 255.0f);
+	themedisabledbuttonfontcolor[GUITHEME_LIGHT] = gColor(160.0f / 255.0f, 160.0f / 255.0f, 160.0f / 255.0f);
 	themedisabledbuttonfontcolor[GUITHEME_DARK] = gColor(160.0f / 255.0f, 160.0f / 255.0f, 160.0f / 255.0f);
 	themedisabledbuttonfontcolor[GUITHEME_LIGHTBLUE] = gColor(5.0f / 255.0f, 5.0f / 255.0f, 5.0f / 255.0f);
 	themedisabledbuttonfontcolor[GUITHEME_DARKBLUE] = gColor(28.0f / 255.0f, 40.0f / 255.0f, 53.0f / 255.0f);
 
 }
-

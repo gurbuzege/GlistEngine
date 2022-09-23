@@ -24,6 +24,12 @@ gVbo::gVbo() {
 	sli = 0;
 	scenelight = nullptr;
 	colorshader = nullptr;
+
+	isAMD = false;
+    const unsigned char* vendorname = glGetString(GL_VENDOR);
+    std::string glven(reinterpret_cast<const char*>(vendorname));
+
+    if (glven.find("ATI") != std::string::npos) isAMD = true;
 }
 
 gVbo::~gVbo() {
@@ -32,8 +38,6 @@ gVbo::~gVbo() {
 void gVbo::setVertexData(gVertex* vertices, int coordNum, int total) {
     glBindVertexArray(vao);
 	if (!isvertexdataallocated) glGenBuffers(1, &vbo);
-	int vno = 0;
-//	logi("vx:" + str(vertices[vno].position.x) + ", vy:" + str(vertices[vno].position.y) + ", vz:" + str(vertices[vno].position.z));
 	verticesptr = &vertices[0];
 	vertexarrayptr = &vertices[0].position.x;
 	vertexdatacoordnum = coordNum;
@@ -57,6 +61,11 @@ void gVbo::setVertexData(gVertex* vertices, int coordNum, int total) {
     glEnableVertexAttribArray(4);
     glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(gVertex), (void*)offsetof(gVertex, bitangent));
     glBindVertexArray(0);
+
+    /* Because of a bug with AMD drivers, glDeleteBuffers function must be called
+     * only while exiting the application.
+     */
+    if(!isAMD) glDeleteBuffers(1, &vbo);
 }
 
 void gVbo::setVertexData(const float* vert0x, int coordNum, int total, int usage, int stride) {
@@ -72,6 +81,7 @@ void gVbo::setVertexData(const float* vert0x, int coordNum, int total, int usage
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, vertexdatacoordnum, GL_FLOAT, GL_FALSE, vertexdatacoordnum * sizeof(float), (void*)0);
 	glBindVertexArray(0);
+	glDeleteBuffers(1, &vbo);
 	isvertexdataallocated = true;
 }
 
@@ -85,21 +95,27 @@ void gVbo::setIndexData(unsigned int* indices, int total) {
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, totalindexnum * sizeof(unsigned int), indexarrayptr, GL_STATIC_DRAW);
     glBindVertexArray(0);
+    if(!isAMD) glDeleteBuffers(1, &ebo);
 }
 
-gVertex* gVbo::getVertices() {
+void gVbo::clear() {
+    glDeleteVertexArrays(1, &vao);
+    glDeleteBuffers(1, &vbo);
+}
+
+gVertex* gVbo::getVertices() const {
 	return verticesptr;
 }
 
-unsigned int* gVbo::getIndices() {
+unsigned int* gVbo::getIndices() const {
 	return indexarrayptr;
 }
 
-void gVbo::bind() {
+void gVbo::bind() const {
 	glBindVertexArray(vao);
 }
 
-void gVbo::unbind() {
+void gVbo::unbind() const {
 	glBindVertexArray(0);
 }
 
@@ -166,11 +182,11 @@ void gVbo::disable() {
 	isenabled = false;
 }
 
-bool gVbo::isVertexDataAllocated() {
+bool gVbo::isVertexDataAllocated() const {
 	return isvertexdataallocated;
 }
 
-bool gVbo::isIndexDataAllocated() {
+bool gVbo::isIndexDataAllocated() const {
 	return isindexdataallocated;
 }
 
@@ -251,14 +267,14 @@ void gVbo::setIndexData(const int* indices, int total, int usage) {
 
 }
 
-int gVbo::getVAOid() {
+int gVbo::getVAOid() const {
 	return vao;
 }
 
-int gVbo::getVerticesNum() {
+int gVbo::getVerticesNum() const {
 	return totalvertexnum;
 }
 
-int gVbo::getIndicesNum() {
+int gVbo::getIndicesNum() const {
 	return totalindexnum;
 }

@@ -12,22 +12,45 @@
 class gGUISizer;
 class gGUIMenubar;
 class gGUIToolbar;
-
+class gGUIContextMenu;
+class gGUIStatusBar;
+class gGUITreelist;
 
 class gGUIForm: public gBaseGUIObject {
 public:
 	gGUIForm();
 	virtual ~gGUIForm();
 
+	enum {
+		RESIZE_MENUBAR,
+		RESIZE_STATUSBAR,
+		RESIZE_TOOLBAR_HORIZONTAL,
+		RESIZE_TOOLBAR_VERTICAL
+	};
+
 	void setMenuBar(gGUIMenubar* menuBar);
 	void resizeMenuBar();
 	void addToolBar(gGUIToolbar* toolBar);
 	void resizeToolbars();
+	void resizeVerticalToolbars();
+	void setStatusBar(gGUIStatusBar* statusBar);
+	void resizeStatusBar();
+	void addContextMenu(gGUIContextMenu* contextMenu);
+	void addTreelist(gGUITreelist* treeList, int treeListx, int treeListy, int treeListw);
+	void resizeAll(int resizeCode);
+
+	void setToolbarHeight(int toolbarHeight);
+	int getToolbarHeight();
+	void setVerticalToolbarWidth(int verticalToolbarWidth);
+	int getVerticalToolbarWidth();
 
 	void setSizer(gGUISizer* guiSizer);
+	void updateSizer();
 	gGUISizer* getSizer();
 
 	virtual int getCursor(int x, int y);
+	int getFocusId();
+	int getPreviousFocusId();
 
 	void show();
 	void hide();
@@ -50,9 +73,18 @@ protected:
 	bool isshown;
 	gGUIMenubar* menubar;
 	gGUIToolbar *toolbars[maxtoolbarnum];
-	int toolbarnum;
+	gGUIToolbar *verticaltoolbars[maxtoolbarnum];
+	gGUIStatusBar* statusbar;
+	int toolbarnum, verticaltoolbarnum;
 	int menuh;
-	int toolbarh;
+	int toolbarh, verticaltoolbarw;
+	int statusw, statush;
+	int sizerh;
+	gGUIContextMenu* contextmenu;
+	int contextmenuw, contextmenuh;
+	int contextmenux, contextmenuy;
+	gGUITreelist* treelist;
+	int treelistw, treelisth;
 };
 
 #endif /* UI_GGUIFORM_H_ */

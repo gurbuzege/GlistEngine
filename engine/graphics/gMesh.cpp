@@ -53,28 +53,32 @@ gMesh::gMesh(std::vector<gVertex> vertices, std::vector<unsigned int> indices, s
 gMesh::~gMesh() {
 }
 
+void gMesh::clear() {
+	vbo.clear();
+}
+
 void gMesh::setName(std::string name) {
 	this->name = name;
 }
 
-std::string gMesh::getName() {
+const std::string& gMesh::getName() const {
 	return name;
 }
 
 void gMesh::setVertices(std::vector<gVertex> vertices, std::vector<unsigned int> indices) {
 	this->vertices = vertices;
 	this->indices = indices;
-	vbo.setVertexData(&vertices[0], sizeof(gVertex), vertices.size());
-	if (indices.size() != 0) vbo.setIndexData(&indices[0], indices.size());
+	vbo.setVertexData(vertices.data(), sizeof(gVertex), vertices.size());
+	if (indices.size() != 0) vbo.setIndexData(indices.data(), indices.size());
     initialboundingbox = getBoundingBox();
 //	initialboundingbox.setTransformationMatrix(localtransformationmatrix);
 }
 
-std::vector<gVertex> gMesh::getVertices() {
+std::vector<gVertex>& gMesh::getVertices() {
 	return vertices;
 }
 
-std::vector<unsigned int> gMesh::getIndices() {
+std::vector<unsigned int>& gMesh::getIndices() {
 	return indices;
 }
 
@@ -140,7 +144,7 @@ void gMesh::setDrawMode(int drawMode) {
 	drawmode = drawMode;
 }
 
-int gMesh::getDrawMode() {
+int gMesh::getDrawMode() const {
 	return drawmode;
 }
 
@@ -312,6 +316,7 @@ void gMesh::drawVbo() {
     	glDrawArrays(drawmode, 0, vbo.getVerticesNum());
     }
     vbo.unbind();
+//    vbo.clear();
 }
 
 void gMesh::drawEnd() {
@@ -319,11 +324,11 @@ void gMesh::drawEnd() {
     glActiveTexture(GL_TEXTURE0);
 }
 
-int gMesh::getVerticesNum() {
+int gMesh::getVerticesNum() const {
 	return vbo.getVerticesNum();
 }
 
-int gMesh::getIndicesNum() {
+int gMesh::getIndicesNum() const {
 	return vbo.getIndicesNum();
 }
 
@@ -354,15 +359,19 @@ gBoundingBox gMesh::getBoundingBox() {
 }
 
 
-gBoundingBox gMesh::getInitialBoundingBox() {
+const gBoundingBox& gMesh::getInitialBoundingBox() const {
 	return initialboundingbox;
 }
 
 bool gMesh::intersectsTriangles(gRay* ray) {
+	float distance = distanceTriangles(ray);
+	return distance > 0.0f && distance < ray->getLength();
+}
+
+float gMesh::distanceTriangles(gRay* ray) {
 	glm::vec2 baryposition(0);
 	float mindistance = std::numeric_limits<float>::max();
 	float distance = 0.0f;
-	bool intersecting = false;
 	for (int i = 0; i < indices.size(); i += 3) {
 		//iterate through all faces of the mesh since each face has 3 vertices
 		glm::vec3 a = vertices[indices[i]].position;
@@ -370,10 +379,9 @@ bool gMesh::intersectsTriangles(gRay* ray) {
 		glm::vec3 c = vertices[indices[i + 2]].position;
 		if(glm::intersectRayTriangle(ray->getOrigin(), ray->getDirection(), a, b, c, baryposition, distance)) {
 			if(distance > 0) {
-				intersecting = true;
 				if(distance < mindistance) mindistance = distance;
 			}
 		}
 	}
-	return intersecting && mindistance > 0.0f && mindistance < ray->getLength();
+	return mindistance;
 }

@@ -18,6 +18,8 @@
 #define CORE_GGUIMANAGER_H_
 
 #include "gGUIFrame.h"
+#include "gGUISizer.h"
+#include "gGUIDialogue.h"
 class gBaseApp;
 
 /**
@@ -41,6 +43,7 @@ public:
 	int getTheme();
 
 	void setCurrentFrame(gGUIFrame* currentFrame);
+	void setupDialogue(gGUIDialogue* dialogue);
 	gGUIFrame* getCurrentFrame();
 
 	void keyPressed(int key);
@@ -63,13 +66,18 @@ public:
 private:
 	gBaseApp* root;
 	gGUIFrame* currentframe;
+	gGUIFrame emptyframe;
+	gGUISizer emptysizer;
 	int guitheme;
 
 	static const int themenum = 4;
 	gColor themebackgroundcolor[themenum];
 	gColor thememiddlegroundcolor[themenum];
 	gColor themeforegroundcolor[themenum];
+	gColor themetextbackgroundcolor[themenum];
+	gColor themenavigationbackgroundcolor[themenum];
 	gColor themefontcolor[themenum];
+	gColor themenavigationfontcolor[themenum];
 	gColor themebuttoncolor[themenum];
 	gColor themepressedbuttoncolor[themenum];
 	gColor themedisabledbuttoncolor[themenum];
@@ -79,6 +87,12 @@ private:
 	gFont themefont;
 	void loadThemes();
 	void resetTheme(int guiTheme);
+
+	gGUISizer defdialoguesizer;
+
+	std::vector<gGUIDialogue*> dialogues;
+	gGUIDialogue* selecteddialogue;
+
 };
 
 #endif /* CORE_GGUIMANAGER_H_ */
